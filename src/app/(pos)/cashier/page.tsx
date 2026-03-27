@@ -178,6 +178,7 @@ export default function CashierPage() {
       };
       const { data } = await api.post('/sales', payload);
       toast.success(`Sale completed! Receipt: ${data.receiptNo}`);
+      window.open(`/sales/receipt/${data.id}`, '_blank');
       setCart([]);
       setSelectedCustomer(null);
       setAmountPaid('');
@@ -211,9 +212,24 @@ export default function CashierPage() {
             <div className="relative">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
+                autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search products by name, SKU, or barcode..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && search.trim() !== '') {
+                    const match = products.find(p => p.barcode === search.trim() || p.sku === search.trim());
+                    if (match) {
+                      addToCart(match);
+                      setSearch('');
+                    } else if (filtered.length === 1) {
+                      addToCart(filtered[0]);
+                      setSearch('');
+                    } else {
+                      toast.error('Barcode not found');
+                    }
+                  }
+                }}
+                placeholder="Scan barcode or type name..."
                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>

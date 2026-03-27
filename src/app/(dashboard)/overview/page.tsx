@@ -58,9 +58,9 @@ const shortDay = (dateStr: string) => {
 };
 
 const paymentMeta: Record<string, { icon: typeof CreditCard; color: string; bg: string; text: string }> = {
-  CASH: { icon: Banknote, color: '#34D399', bg: 'bg-emerald-50', text: 'text-emerald-600' },
-  CARD: { icon: CreditCard, color: '#6366F1', bg: 'bg-indigo-50', text: 'text-indigo-600' },
-  UPI:  { icon: Smartphone, color: '#F59E0B', bg: 'bg-amber-50', text: 'text-amber-600' },
+  CASH: { icon: Banknote, color: '#10B981', bg: 'bg-emerald-50', text: 'text-emerald-500' },
+  CARD: { icon: CreditCard, color: '#3B82F6', bg: 'bg-blue-50', text: 'text-blue-500' },
+  UPI:  { icon: Smartphone, color: '#F59E0B', bg: 'bg-amber-50', text: 'text-amber-500' },
 };
 
 const getPM = (method: string) => paymentMeta[method] || paymentMeta.CASH;
@@ -70,7 +70,10 @@ const getPM = (method: string) => paymentMeta[method] || paymentMeta.CASH;
 /* ------------------------------------------------------------------ */
 
 const Skeleton = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
-  <div className={cn('skeleton-shimmer rounded-lg', className)} style={style} />
+  <div className={cn('animate-pulse bg-white/20 rounded-xl', className)} style={style} />
+);
+const SkeletonDark = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <div className={cn('animate-pulse bg-slate-200 rounded-xl', className)} style={style} />
 );
 
 /* ------------------------------------------------------------------ */
@@ -78,10 +81,10 @@ const Skeleton = ({ className, style }: { className?: string; style?: React.CSSP
 /* ------------------------------------------------------------------ */
 
 const AreaChart = ({ data, maxVal }: { data: { date: string; revenue: number; count: number }[]; maxVal: number }) => {
-  const w = 560;
-  const h = 200;
+  const w = 600;
+  const h = 220;
   const padX = 0;
-  const padY = 10;
+  const padY = 20;
   const innerW = w - padX * 2;
   const innerH = h - padY * 2;
 
@@ -97,50 +100,30 @@ const AreaChart = ({ data, maxVal }: { data: { date: string; revenue: number; co
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" preserveAspectRatio="none">
       <defs>
-        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#FF6B6B" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="#FF6B6B" stopOpacity="0" />
-        </linearGradient>
-        <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#FF6B6B" />
-          <stop offset="100%" stopColor="#F59E0B" />
+        <linearGradient id="areaGradPremium" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" />
+          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
         </linearGradient>
       </defs>
+      
       {/* Grid lines */}
-      {[0.25, 0.5, 0.75].map((pct) => (
+      {[0.33, 0.66, 1].map((pct) => (
         <line
           key={pct}
           x1={0} y1={padY + innerH * (1 - pct)} x2={w} y2={padY + innerH * (1 - pct)}
           stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4 4"
         />
       ))}
-      {/* Area fill */}
-      <path d={areaPath} fill="url(#areaGrad)" className="animate-fade-in-scale" />
-      {/* Line */}
-      <path
-        d={linePath}
-        fill="none"
-        stroke="url(#lineGrad)"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeDasharray="500"
-        className="animate-draw-line"
-      />
-      {/* Dots */}
+      
+      <path d={areaPath} fill="url(#areaGradPremium)" />
+      <path d={linePath} fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      
       {points.map((p, i) => {
         const isToday = p.date === new Date().toISOString().split('T')[0];
         return (
           <g key={p.date}>
-            {isToday && <circle cx={p.x} cy={p.y} r="10" fill="#FF6B6B" opacity="0.15" className="animate-fade-in-scale" />}
-            <circle
-              cx={p.x} cy={p.y} r={isToday ? 5 : 3.5}
-              fill={isToday ? '#FF6B6B' : '#fff'}
-              stroke={isToday ? '#FF6B6B' : '#FF6B6B'}
-              strokeWidth={isToday ? 2 : 1.5}
-              className="animate-fade-in-scale"
-              style={{ animationDelay: `${i * 80}ms` }}
-            />
+            {isToday && <circle cx={p.x} cy={p.y} r="8" fill="#3b82f6" opacity="0.2" />}
+            <circle cx={p.x} cy={p.y} r={isToday ? 4 : 2} fill="#fff" stroke="#3b82f6" strokeWidth={2} />
           </g>
         );
       })}
@@ -154,8 +137,8 @@ const AreaChart = ({ data, maxVal }: { data: { date: string; revenue: number; co
 
 const DonutRing = ({ data }: { data: { method: string; total: number }[] }) => {
   const total = data.reduce((s, d) => s + d.total, 0) || 1;
-  const size = 160;
-  const strokeW = 18;
+  const size = 180;
+  const strokeW = 16;
   const radius = (size - strokeW) / 2;
   const circumference = 2 * Math.PI * radius;
   let offset = 0;
@@ -163,8 +146,7 @@ const DonutRing = ({ data }: { data: { method: string; total: number }[] }) => {
   return (
     <div className="relative flex items-center justify-center">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
-        {/* Track */}
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#f1f5f9" strokeWidth={strokeW} />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#f8fafc" strokeWidth={strokeW} />
         {data.map((d, i) => {
           const pct = d.total / total;
           const dashLen = pct * circumference;
@@ -172,25 +154,15 @@ const DonutRing = ({ data }: { data: { method: string; total: number }[] }) => {
           offset += dashLen;
           return (
             <circle
-              key={d.method}
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              fill="none"
-              stroke={getPM(d.method).color}
-              strokeWidth={strokeW}
-              strokeDasharray={`${dashLen} ${circumference - dashLen}`}
-              strokeDashoffset={-dashOffset}
-              strokeLinecap="round"
-              className="transition-all duration-700"
-              style={{ animationDelay: `${i * 150}ms` }}
+              key={d.method} cx={size / 2} cy={size / 2} r={radius} fill="none"
+              stroke={getPM(d.method).color} strokeWidth={strokeW} strokeDasharray={`${dashLen} ${circumference - dashLen}`}
+              strokeDashoffset={-dashOffset} strokeLinecap="round"
             />
           );
         })}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[10px] uppercase tracking-widest text-gray-400 font-display font-semibold">Total</span>
-        <span className="text-xl font-display font-extrabold text-gray-900 mt-0.5">{money(total)}</span>
+        <span className="text-xl font-display font-extrabold text-slate-800">{money(total)}</span>
       </div>
     </div>
   );
@@ -227,449 +199,249 @@ export default function OverviewPage() {
     [stats],
   );
 
-  const now = new Date();
-  const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 17 ? 'Good afternoon' : 'Good evening';
-  const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-
-  /* ── Render ── */
   return (
-    <div className="space-y-7 max-w-[1400px] mx-auto">
+    <div className="space-y-6 max-w-[1400px] mx-auto pb-12 px-4 py-8">
 
-      {/* ════════════════════════════════════════════════════════════ */}
-      {/*  HEADER — Editorial style                                   */}
-      {/* ════════════════════════════════════════════════════════════ */}
-      <div className="flex items-end justify-between animate-fade-in-up">
+      {/* ═ HEADER ═ */}
+      <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-display font-semibold mb-2">
-            Dashboard Overview
-          </p>
-          <h1 className="text-3xl font-display font-extrabold text-gray-900 tracking-tight leading-none">
-            {greeting}, <span className="bg-gradient-to-r from-[#FF6B6B] to-[#F59E0B] bg-clip-text text-transparent">{user?.name?.split(' ')[0]}</span>
+          <h1 className="text-3xl font-display font-bold text-slate-800 tracking-tight">
+            Dashboard
           </h1>
-          <p className="text-sm text-gray-400 mt-2 font-body">{dateStr}</p>
+          <p className="text-sm text-slate-500 mt-1">Welcome back, {user?.name}</p>
         </div>
         <button
           onClick={refresh}
           disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200/80 text-sm font-display font-semibold text-gray-600 hover:border-[#FF6B6B]/30 hover:text-[#FF6B6B] hover:shadow-lg hover:shadow-[#FF6B6B]/5 transition-all duration-300 disabled:opacity-50"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition shadow disabled:opacity-50"
         >
-          <RefreshCw size={14} className={cn(refreshing && 'animate-spin')} />
-          Refresh
+          <RefreshCw size={16} className={cn(refreshing && 'animate-spin')} />
+          {refreshing ? 'Updating...' : 'Update Data'}
         </button>
       </div>
 
-      {/* ════════════════════════════════════════════════════════════ */}
-      {/*  HERO METRICS — Bento asymmetric grid                       */}
-      {/* ════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-12 gap-4">
-
-        {/* ── Revenue Hero Card (spanning 5 cols) ── */}
-        <div
-          className="col-span-12 lg:col-span-5 relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1E293B] to-[#0F172A] p-6 text-white animate-fade-in-up grain-overlay group hover:shadow-2xl hover:shadow-[#FF6B6B]/10 transition-all duration-500"
-          style={{ animationDelay: '50ms' }}
-        >
-          {/* Decorative mesh */}
-          <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-[#FF6B6B]/20 to-transparent rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-[#F59E0B]/10 to-transparent rounded-full blur-2xl" />
-
+      {/* ═ THE VIBRANT SOLID CARDS ROW ═ */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        
+        {/* Card 1: Revenue */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl shadow-lg shadow-indigo-500/20 p-6 text-white group cursor-pointer hover:-translate-y-1 transition-transform">
+          <DollarSign className="absolute -right-4 -bottom-4 w-32 h-32 text-white/10 group-hover:scale-110 transition-transform duration-500" />
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
-                  <DollarSign size={18} className="text-[#FF6B6B]" />
-                </div>
-                <span className="text-xs uppercase tracking-wider text-white/50 font-display font-semibold">Today&apos;s Revenue</span>
-              </div>
-              {stats?.revenueChange !== undefined && stats.revenueChange !== 0 && (
-                <div className={cn(
-                  'flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur',
-                  stats.revenueChange > 0 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300',
-                )}>
-                  {stats.revenueChange > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                  {Math.abs(stats.revenueChange)}% vs yesterday
-                </div>
-              )}
+            <div className="flex items-center justify-between mb-4">
+               <span className="text-indigo-100 font-medium tracking-wide">Gross Revenue</span>
+               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                 <DollarSign size={20} />
+               </div>
             </div>
-
-            {loading ? (
-              <div className="space-y-3">
-                <div className="skeleton-shimmer h-12 w-48 rounded-lg opacity-20" />
-                <div className="skeleton-shimmer h-4 w-32 rounded opacity-20" />
-              </div>
-            ) : (
-              <>
-                <p className="text-5xl font-display font-black tracking-tight animate-count-up leading-none">
-                  {money(stats?.todayRevenue ?? 0)}
-                </p>
-                <div className="flex items-center gap-4 mt-4 text-white/40 text-xs font-display font-medium">
-                  <span className="flex items-center gap-1.5">
-                    <Flame size={12} className="text-[#FF6B6B]" />
-                    {stats?.todaySales ?? 0} transactions
-                  </span>
-                  <span className="w-px h-3 bg-white/20" />
-                  <span>Avg {money(stats?.avgOrderValue ?? 0)}</span>
-                </div>
-              </>
+            {loading ? <Skeleton className="h-10 w-32" /> : (
+              <h2 className="text-4xl font-bold tracking-tight">{money(stats?.todayRevenue ?? 0)}</h2>
             )}
+            <div className="mt-4 flex items-center gap-2 text-sm text-indigo-100 bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-md">
+              <TrendingUp size={14} /> +{stats?.revenueChange || 0}% from yesterday
+            </div>
           </div>
         </div>
 
-        {/* ── Right KPI Stack (spanning 7 cols, 2x2 grid) ── */}
-        <div className="col-span-12 lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {[
-            {
-              label: "Today's Sales",
-              value: String(stats?.todaySales ?? 0),
-              change: stats?.salesChange ?? 0,
-              icon: ShoppingCart,
-              accent: '#34D399',
-              accentBg: 'bg-emerald-50',
-              accentText: 'text-emerald-600',
-            },
-            {
-              label: 'Avg Order Value',
-              value: money(stats?.avgOrderValue ?? 0),
-              change: null,
-              icon: Activity,
-              accent: '#F59E0B',
-              accentBg: 'bg-amber-50',
-              accentText: 'text-amber-600',
-            },
-            {
-              label: 'Total Customers',
-              value: String(stats?.totalCustomers ?? 0),
-              change: null,
-              icon: Users,
-              accent: '#6366F1',
-              accentBg: 'bg-indigo-50',
-              accentText: 'text-indigo-600',
-            },
-            {
-              label: 'Total Products',
-              value: String(stats?.totalProducts ?? 0),
-              change: null,
-              icon: Package,
-              accent: '#FF6B6B',
-              accentBg: 'bg-red-50',
-              accentText: 'text-red-500',
-            },
-            {
-              label: "Today's Tax",
-              value: money(stats?.todayTax ?? 0),
-              change: null,
-              icon: ReceiptText,
-              accent: '#8B5CF6',
-              accentBg: 'bg-violet-50',
-              accentText: 'text-violet-600',
-            },
-            {
-              label: "Discounts Given",
-              value: money(stats?.todayDiscount ?? 0),
-              change: null,
-              icon: Zap,
-              accent: '#EC4899',
-              accentBg: 'bg-pink-50',
-              accentText: 'text-pink-600',
-            },
-          ].map((card, idx) => (
-            <div
-              key={card.label}
-              className="relative bg-white rounded-2xl border border-gray-100/80 p-4 hover:border-gray-200 hover:shadow-lg hover:shadow-gray-200/50 transition-all duration-300 group animate-fade-in-up overflow-hidden"
-              style={{ animationDelay: `${100 + idx * 60}ms` }}
-            >
-              {/* Subtle corner accent */}
-              <div
-                className="absolute top-0 right-0 w-16 h-16 rounded-bl-[40px] opacity-[0.06] transition-opacity group-hover:opacity-[0.12]"
-                style={{ background: card.accent }}
-              />
-
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', card.accentBg)}>
-                    <card.icon size={17} className={card.accentText} />
-                  </div>
-                  {card.change !== null && card.change !== 0 && (
-                    <span className={cn(
-                      'text-[11px] font-bold px-2 py-0.5 rounded-full',
-                      card.change > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500',
-                    )}>
-                      {card.change > 0 ? '+' : ''}{card.change}%
-                    </span>
-                  )}
-                </div>
-
-                {loading ? (
-                  <>
-                    <Skeleton className="h-7 w-20 mb-1.5" />
-                    <Skeleton className="h-3.5 w-16" />
-                  </>
-                ) : (
-                  <>
-                    <p className="text-xl font-display font-extrabold text-gray-900 tracking-tight leading-none">{card.value}</p>
-                    <p className="text-[11px] text-gray-400 mt-1.5 font-display font-medium tracking-wide uppercase">{card.label}</p>
-                  </>
-                )}
-              </div>
+        {/* Card 2: Orders */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl shadow-lg shadow-teal-500/20 p-6 text-white group cursor-pointer hover:-translate-y-1 transition-transform">
+          <ShoppingCart className="absolute -right-4 -bottom-4 w-32 h-32 text-white/10 group-hover:scale-110 transition-transform duration-500" />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+               <span className="text-teal-50 font-medium tracking-wide">Total Sales Count</span>
+               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                 <ShoppingCart size={20} />
+               </div>
             </div>
-          ))}
+            {loading ? <Skeleton className="h-10 w-24" /> : (
+              <h2 className="text-4xl font-bold tracking-tight">{stats?.todaySales ?? 0}</h2>
+            )}
+            <div className="mt-4 flex items-center gap-2 text-sm text-teal-50 bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-md">
+              <TrendingUp size={14} /> +{(stats?.salesChange || 0)}% from yesterday
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Customers */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-fuchsia-500 to-purple-600 rounded-2xl shadow-lg shadow-fuchsia-500/20 p-6 text-white group cursor-pointer hover:-translate-y-1 transition-transform">
+          <Users className="absolute -right-4 -bottom-4 w-32 h-32 text-white/10 group-hover:scale-110 transition-transform duration-500" />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+               <span className="text-fuchsia-100 font-medium tracking-wide">Active Customers</span>
+               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                 <Users size={20} />
+               </div>
+            </div>
+            {loading ? <Skeleton className="h-10 w-24" /> : (
+              <h2 className="text-4xl font-bold tracking-tight">{stats?.totalCustomers ?? 0}</h2>
+            )}
+            <div className="mt-4 flex items-center gap-2 text-sm text-fuchsia-100 bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-md">
+              <Activity size={14} /> Platform reach
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: Avg Order Value */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-orange-400 to-amber-500 rounded-2xl shadow-lg shadow-orange-500/20 p-6 text-white group cursor-pointer hover:-translate-y-1 transition-transform">
+          <Activity className="absolute -right-4 -bottom-4 w-32 h-32 text-white/10 group-hover:scale-110 transition-transform duration-500" />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+               <span className="text-amber-50 font-medium tracking-wide">Avg Order Value</span>
+               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                 <Activity size={20} />
+               </div>
+            </div>
+            {loading ? <Skeleton className="h-10 w-24" /> : (
+              <h2 className="text-4xl font-bold tracking-tight">{money(stats?.avgOrderValue ?? 0)}</h2>
+            )}
+            <div className="mt-4 flex items-center gap-2 text-sm text-amber-50 bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-md">
+               <TrendingUp size={14} /> Trailing 24h
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ════════════════════════════════════════════════════════════ */}
-      {/*  REVENUE CHART + PAYMENT BREAKDOWN                          */}
-      {/* ════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      {/* ═ MINI SECONDARY STATS ROW ═ */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-4">
+           <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-500"><ReceiptText size={20} /></div>
+           <div>
+             <div className="text-xs font-bold text-slate-400 uppercase">Tax Collected</div>
+             <div className="text-lg font-bold text-slate-800">{loading ? <SkeletonDark className="h-6 w-16" /> : money(stats?.todayTax ?? 0)}</div>
+           </div>
+         </div>
+         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-4">
+           <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-500"><Zap size={20} /></div>
+           <div>
+             <div className="text-xs font-bold text-slate-400 uppercase">Total Discounts</div>
+             <div className="text-lg font-bold text-slate-800">{loading ? <SkeletonDark className="h-6 w-16" /> : money(stats?.todayDiscount ?? 0)}</div>
+           </div>
+         </div>
+         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-4">
+           <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-500"><Package size={20} /></div>
+           <div>
+             <div className="text-xs font-bold text-slate-400 uppercase">Products Total</div>
+             <div className="text-lg font-bold text-slate-800">{loading ? <SkeletonDark className="h-6 w-16" /> : (stats?.totalProducts ?? 0)}</div>
+           </div>
+         </div>
+      </div>
 
-        {/* ── Area Chart ── */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100/80 overflow-hidden hover:shadow-lg hover:shadow-gray-200/50 transition-all duration-300 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-          <div className="px-6 py-5 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-display font-bold text-gray-900 tracking-tight">Revenue Trend</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Last 7 days performance</p>
-            </div>
-            <div className="flex items-center gap-4 text-[11px] text-gray-400 font-display font-medium">
-              <span className="flex items-center gap-1.5">
-                <span className="w-6 h-[2px] rounded-full bg-gradient-to-r from-[#FF6B6B] to-[#F59E0B]" />
-                Revenue
-              </span>
-            </div>
-          </div>
-
-          <div className="px-6 pb-2">
-            {loading ? (
-              <div className="h-[200px] flex items-end gap-3">
+      {/* ═ CHARTS ROW ═ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-12">
+        {/* Revenue Chart */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <h2 className="text-lg font-bold text-slate-800 mb-6">Revenue Over Time (7 Days)</h2>
+          {loading ? (
+             <div className="h-[200px] flex items-end gap-3 pb-6">
                 {Array.from({ length: 7 }).map((_, i) => (
-                  <div key={i} className="flex-1">
-                    <Skeleton className="w-full" style={{ height: `${40 + Math.random() * 60}%` }} />
-                  </div>
+                  <SkeletonDark key={i} className="flex-1 w-full rounded-md" style={{ height: `${20 + Math.random() * 80}%` }} />
                 ))}
+            </div>
+          ) : (
+            <div className="h-[220px] w-full">
+              <AreaChart data={stats?.dailyChart ?? []} maxVal={maxChartRevenue} />
+              <div className="flex justify-between items-center mt-3 border-t border-slate-50 pt-3">
+                {stats?.dailyChart?.map((day) => {
+                  const isToday = day.date === new Date().toISOString().split('T')[0];
+                  return (
+                    <div key={day.date} className="text-center w-full">
+                      <p className={cn("text-[11px] font-bold", isToday ? "text-blue-600" : "text-slate-400")}>{shortDay(day.date)}</p>
+                    </div>
+                  );
+                })}
               </div>
-            ) : (
-              <div className="h-[200px]">
-                <AreaChart data={stats?.dailyChart ?? []} maxVal={maxChartRevenue} />
-              </div>
-            )}
-          </div>
-
-          {/* Day labels */}
-          {!loading && stats?.dailyChart && (
-            <div className="px-6 pb-5 flex justify-between">
-              {stats.dailyChart.map((day) => {
-                const isToday = day.date === new Date().toISOString().split('T')[0];
-                return (
-                  <div key={day.date} className="text-center flex-1">
-                    <p className={cn(
-                      'text-[11px] font-display font-semibold',
-                      isToday ? 'text-[#FF6B6B]' : 'text-gray-400',
-                    )}>
-                      {shortDay(day.date)}
-                    </p>
-                    <p className="text-[10px] text-gray-300 mt-0.5">{money(day.revenue)}</p>
-                  </div>
-                );
-              })}
             </div>
           )}
         </div>
 
-        {/* ── Payment Split ── */}
-        <div className="bg-white rounded-2xl border border-gray-100/80 overflow-hidden hover:shadow-lg hover:shadow-gray-200/50 transition-all duration-300 animate-fade-in-up" style={{ animationDelay: '260ms' }}>
-          <div className="px-6 py-5">
-            <h3 className="text-sm font-display font-bold text-gray-900 tracking-tight">Payment Split</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Today&apos;s breakdown</p>
-          </div>
-          <div className="px-6 pb-6">
-            {loading ? (
-              <div className="flex flex-col items-center gap-4">
-                <Skeleton className="w-40 h-40 rounded-full" />
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-32" />
+        {/* Payment Split */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col">
+          <h2 className="text-lg font-bold text-slate-800 mb-6">Payment Overview</h2>
+          {loading ? (
+            <div className="flex-1 flex flex-col justify-center gap-6"><SkeletonDark className="w-40 h-40 rounded-full mx-auto" /></div>
+          ) : !stats?.paymentBreakdown?.length ? (
+            <div className="flex-1 flex items-center justify-center"><span className="text-slate-400 text-sm">No transactions yet</span></div>
+          ) : (
+            <div className="flex-1 flex flex-col justify-between">
+              <div className="flex justify-center my-4">
+                <DonutRing data={stats.paymentBreakdown} />
               </div>
-            ) : !stats?.paymentBreakdown?.length ? (
-              <div className="text-center py-12">
-                <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-3">
-                  <CreditCard size={24} className="text-gray-300" />
-                </div>
-                <p className="text-sm text-gray-400 font-display">No sales today</p>
+              <div className="space-y-4 mt-6">
+                {stats.paymentBreakdown.map((p) => {
+                  const pm = getPM(p.method);
+                  return (
+                    <div key={p.method} className="flex items-center justify-between">
+                       <span className="text-sm font-semibold text-slate-600 flex items-center gap-2">
+                         <pm.icon size={16} className={pm.text} /> {p.method}
+                       </span>
+                       <span className="text-sm font-bold text-slate-900">{money(p.total)}</span>
+                    </div>
+                  );
+                })}
               </div>
-            ) : (
-              <>
-                <div className="flex justify-center mb-6">
-                  <DonutRing data={stats.paymentBreakdown} />
-                </div>
-                <div className="space-y-3">
-                  {stats.paymentBreakdown.map((p, idx) => {
-                    const pm = getPM(p.method);
-                    const pct = totalPayments > 0 ? (p.total / totalPayments) * 100 : 0;
-                    return (
-                      <div
-                        key={p.method}
-                        className="flex items-center gap-3 animate-slide-in"
-                        style={{ animationDelay: `${400 + idx * 100}ms` }}
-                      >
-                        <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', pm.bg)}>
-                          <pm.icon size={14} className={pm.text} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-xs font-display font-semibold text-gray-700">{p.method}</span>
-                            <span className="text-xs font-display font-bold text-gray-900">{money(p.total)}</span>
-                          </div>
-                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all duration-1000 ease-out"
-                              style={{ width: `${pct}%`, background: pm.color }}
-                            />
-                          </div>
-                        </div>
-                        <span className="text-[10px] font-display font-bold text-gray-400 w-9 text-right">{pct.toFixed(0)}%</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ════════════════════════════════════════════════════════════ */}
-      {/*  RECENT SALES + LOW STOCK ALERTS                            */}
-      {/* ════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-        {/* ── Recent Transactions ── */}
-        <div className="bg-white rounded-2xl border border-gray-100/80 overflow-hidden hover:shadow-lg hover:shadow-gray-200/50 transition-all duration-300 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
-          <div className="px-6 py-5 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-display font-bold text-gray-900 tracking-tight">Recent Transactions</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Latest sales activity</p>
-            </div>
-            <Link href="/sales" className="flex items-center gap-1.5 text-xs font-display font-bold text-[#FF6B6B] hover:text-[#e55a5a] transition group/link">
-              View All <ArrowRight size={12} className="group-hover/link:translate-x-0.5 transition-transform" />
-            </Link>
+      {/* ═ DATA TABLES ROW ═ */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12 mt-6">
+        {/* Recent Sales List */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-800">Recent Transactions</h2>
+            <Link href="/sales" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700">View All</Link>
           </div>
-
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-slate-100 flex-1">
             {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="px-6 py-3.5 flex items-center gap-4">
-                  <Skeleton className="w-10 h-10 rounded-xl flex-shrink-0" />
-                  <div className="flex-1">
-                    <Skeleton className="h-4 w-32 mb-2" />
-                    <Skeleton className="h-3 w-20" />
+              <div className="p-4 space-y-4"><SkeletonDark className="h-12 w-full" /><SkeletonDark className="h-12 w-full" /></div>
+            ) : !stats?.recentSales?.length ? (
+              <div className="p-8 text-center text-sm text-slate-400">No recent transactions.</div>
+            ) : (
+              stats.recentSales.slice(0, 5).map((sale) => (
+                <div key={sale.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition">
+                  <div className="flex items-center gap-4">
+                     <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
+                        <ReceiptText size={18} />
+                     </div>
+                     <div>
+                       <p className="text-sm font-bold text-slate-800">{sale.receiptNo}</p>
+                       <p className="text-xs font-medium text-slate-500">{sale.customer?.name || 'Walk-in'} &bull; {new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                     </div>
                   </div>
-                  <Skeleton className="h-4 w-16" />
+                  <div className="text-base font-bold text-slate-900">{money(sale.totalAmount)}</div>
                 </div>
               ))
-            ) : !stats?.recentSales?.length ? (
-              <div className="px-6 py-14 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-3">
-                  <ShoppingCart size={24} className="text-gray-300" />
-                </div>
-                <p className="text-sm text-gray-400 font-display">No transactions yet</p>
-              </div>
-            ) : (
-              stats.recentSales.slice(0, 6).map((sale, idx) => {
-                const pm = getPM(sale.paymentMethod);
-                return (
-                  <div
-                    key={sale.id}
-                    className="px-6 py-3 flex items-center gap-4 hover:bg-gray-50/50 transition-colors cursor-pointer group animate-slide-in"
-                    style={{ animationDelay: `${350 + idx * 60}ms` }}
-                  >
-                    <div className={cn(
-                      'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105',
-                      pm.bg,
-                    )}>
-                      <pm.icon size={17} className={pm.text} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-display font-semibold text-gray-900 truncate">{sale.receiptNo}</p>
-                      <p className="text-xs text-gray-400 mt-0.5 font-body">
-                        {sale.customer?.name || 'Walk-in'}
-                        {sale.cashier ? ` \u2022 ${sale.cashier.name}` : ''}
-                      </p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-display font-bold text-gray-900">{money(sale.totalAmount)}</p>
-                      <p className="text-[10px] text-gray-400 flex items-center gap-1 justify-end mt-0.5">
-                        <Clock size={9} />
-                        {new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })
             )}
           </div>
         </div>
 
-        {/* ── Stock Alerts ── */}
-        <div className="bg-white rounded-2xl border border-gray-100/80 overflow-hidden hover:shadow-lg hover:shadow-gray-200/50 transition-all duration-300 animate-fade-in-up" style={{ animationDelay: '360ms' }}>
-          <div className="px-6 py-5 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-display font-bold text-gray-900 tracking-tight">Stock Alerts</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Items requiring attention</p>
-            </div>
-            <Link href="/inventory" className="flex items-center gap-1.5 text-xs font-display font-bold text-[#FF6B6B] hover:text-[#e55a5a] transition group/link">
-              View All <ArrowRight size={12} className="group-hover/link:translate-x-0.5 transition-transform" />
-            </Link>
+        {/* Low Stock Alerts */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-800">Low Stock Alerts</h2>
+            <Link href="/inventory" className="text-sm font-semibold text-rose-600 hover:text-rose-700">Manage Inventory</Link>
           </div>
-
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-slate-100 flex-1">
             {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="px-6 py-3.5 flex items-center gap-4">
-                  <Skeleton className="w-10 h-10 rounded-xl flex-shrink-0" />
-                  <div className="flex-1">
-                    <Skeleton className="h-4 w-40 mb-2" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                  <Skeleton className="h-6 w-20 rounded-full" />
-                </div>
-              ))
+              <div className="p-4 space-y-4"><SkeletonDark className="h-12 w-full" /><SkeletonDark className="h-12 w-full" /></div>
             ) : !stats?.lowStockProducts?.length ? (
-              <div className="px-6 py-14 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-3">
-                  <Package size={24} className="text-emerald-400" />
-                </div>
-                <p className="text-sm text-gray-400 font-display">All products well stocked</p>
-              </div>
+              <div className="p-8 text-center text-sm text-slate-400">Inventory levels look healthy!</div>
             ) : (
-              stats.lowStockProducts.map((product, idx) => {
+              stats.lowStockProducts.slice(0, 5).map(product => {
                 const isOut = product.totalStock <= 0;
-                const isCritical = product.totalStock > 0 && product.totalStock <= 3;
                 return (
-                  <div
-                    key={product.id}
-                    className="px-6 py-3 flex items-center gap-4 hover:bg-gray-50/50 transition-colors group animate-slide-in"
-                    style={{ animationDelay: `${400 + idx * 60}ms` }}
-                  >
-                    <div className={cn(
-                      'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105',
-                      isOut ? 'bg-red-50' : isCritical ? 'bg-orange-50' : 'bg-amber-50',
-                    )}>
-                      <AlertTriangle size={17} className={cn(
-                        isOut ? 'text-red-500' : isCritical ? 'text-orange-500' : 'text-amber-500',
-                      )} />
+                  <div key={product.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition">
+                    <div className="flex items-center gap-4">
+                      <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", isOut ? "bg-rose-50 text-rose-500" : "bg-amber-50 text-amber-500")}>
+                        <AlertTriangle size={18} />
+                      </div>
+                      <div className="max-w-[180px] sm:max-w-xs">
+                        <p className="text-sm font-bold text-slate-800 truncate">{product.name}</p>
+                        <p className="text-xs font-medium text-slate-500">{product.sku}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-display font-semibold text-gray-900 truncate">{product.name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5 font-body">
-                        {product.sku}
-                        {product.category ? ` \u2022 ${product.category}` : ''}
-                      </p>
-                    </div>
-                    <span className={cn(
-                      'px-3 py-1 rounded-full text-[11px] font-display font-bold flex-shrink-0',
-                      isOut
-                        ? 'bg-red-50 text-red-600 ring-1 ring-red-200'
-                        : isCritical
-                          ? 'bg-orange-50 text-orange-600 ring-1 ring-orange-200'
-                          : 'bg-amber-50 text-amber-600 ring-1 ring-amber-200',
-                    )}>
-                      {isOut ? 'Out of stock' : `${product.totalStock} left`}
+                    <span className={cn("text-xs font-bold px-3 py-1.5 rounded-lg border", isOut ? "bg-rose-50 text-rose-700 border-rose-100" : "bg-amber-50 text-amber-700 border-amber-100")}>
+                      {isOut ? 'Depleted' : `${product.totalStock} left`}
                     </span>
                   </div>
                 );

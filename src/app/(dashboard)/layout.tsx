@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, ShoppingCart, Package, TrendingUp, BarChart3,
   Users, Store, UserCircle, ClipboardList, Settings, LogOut,
-  Menu, X, ChevronDown,
+  Menu, X, ChevronDown, Truck, Tag, Percent, CalendarCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
@@ -25,10 +25,14 @@ const navItems: NavItem[] = [
   { label: 'Inventory', href: '/inventory', icon: Package },
   { label: 'Sales', href: '/sales', icon: TrendingUp },
   { label: 'Reports', href: '/reports', icon: BarChart3, moduleKey: 'reports' },
+  { label: 'EOD Report', href: '/reports/eod', icon: CalendarCheck },
   { label: 'Staff', href: '/staff', icon: Users },
   { label: 'Stores', href: '/stores', icon: Store, moduleKey: 'multiStore' },
   { label: 'Customers', href: '/customers', icon: UserCircle, moduleKey: 'customerProfiles' },
   { label: 'Purchase Orders', href: '/purchase-orders', icon: ClipboardList, moduleKey: 'suppliers' },
+  { label: 'Suppliers', href: '/suppliers', icon: Truck, moduleKey: 'suppliers' },
+  { label: 'Tax Rates', href: '/tax-rates', icon: Percent, moduleKey: 'gstBilling' },
+  { label: 'Discount Rules', href: '/discount-rules', icon: Tag, moduleKey: 'discountRules' },
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
@@ -69,7 +73,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Sidebar */}
       <aside
         className={cn(
-          'bg-[#1B2559] flex flex-col transition-all duration-300 flex-shrink-0',
+          'bg-[#1B2559] flex flex-col transition-all duration-300 flex-shrink-0 print:hidden',
           sidebarOpen ? 'w-60' : 'w-0 overflow-hidden',
         )}
       >
@@ -115,7 +119,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center px-6 gap-4 flex-shrink-0">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center px-6 gap-4 flex-shrink-0 print:hidden">
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-500 hover:text-gray-700">
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -159,7 +163,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6 print:p-0">{children}</main>
       </div>
     </div>
   );

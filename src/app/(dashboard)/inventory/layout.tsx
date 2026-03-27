@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, ArrowLeftRight, Upload } from 'lucide-react';
+import { Package, ArrowLeftRight, Upload, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const inventoryTabs = [
   { label: 'Products', href: '/inventory', icon: Package },
   { label: 'Stock Management', href: '/inventory/stock', icon: ArrowLeftRight },
   { label: 'Import Products', href: '/inventory/import', icon: Upload },
+  { label: 'Print Labels', href: '/inventory/labels', icon: Printer },
 ];
 
 export default function InventoryLayout({ children }: { children: React.ReactNode }) {
@@ -17,7 +18,7 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
   return (
     <div>
       {/* Tab navigation */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-6 print:hidden">
         <div className="flex gap-0 border-b border-gray-200">
           {inventoryTabs.map((tab) => {
             const active = pathname === tab.href;
