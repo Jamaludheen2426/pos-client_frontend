@@ -2,213 +2,140 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Search, Plus, Eye, X, Loader2, ChevronLeft, ChevronRight, ClipboardList } from 'lucide-react';
+import { Search, Eye, X, Loader2, ChevronLeft, ChevronRight, ClipboardList } from 'lucide-react';
 import api from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 interface PurchaseOrder {
-  id: number;
-  orderNo: string;
-  status: string;
-  totalAmount: number;
-  expectedDate: string | null;
-  receivedDate: string | null;
-  createdAt: string;
+  id: number; status: string; totalAmount: number; createdAt: string; note: string | null;
   supplier: { id: number; name: string };
-  items: { id: number; productName: string; quantity: number; unitCost: number; receivedQuantity: number }[];
+  store: { id: number; name: string };
+  items: { id: number; productId: number; qty: number; costPrice: number; product?: { name: string } }[];
 }
 
-interface Supplier {
-  id: number;
-  name: string;
-}
-
-interface POForm {
-  supplierId: string;
-  expectedDate: string;
-  items: { productId: string; productName: string; quantity: string; unitCost: string }[];
-}
+const statusStyle = (s: string) => {
+  if (s === 'RECEIVED') return 'bg-[#EAF5F0] text-[#008060]';
+  if (s === 'CANCELLED') return 'bg-[#FFF4F4] text-[#D72C0D]';
+  return 'bg-[#FFF4E4] text-[#B25000]';
+};
 
 export default function PurchaseOrdersPage() {
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
+  const [selected, setSelected] = useState<PurchaseOrder | null>(null);
   const [page, setPage] = useState(1);
   const perPage = 20;
 
-  const fetchData = () => {
+  const fetch = () => {
     setLoading(true);
-    Promise.all([
-      api.get('/purchase-orders').catch(() => ({ data: [] })),
-      api.get('/suppliers').catch(() => ({ data: [] })),
-    ])
-      .then(([poRes, supRes]) => {
-        setOrders(poRes.data);
-        setSuppliers(supRes.data);
-      })
-      .finally(() => setLoading(false));
+    api.get('/purchase-orders').then(({ data }) => setOrders(Array.isArray(data) ? data : data.orders || [])).catch(() => toast.error('Failed to load')).finally(() => setLoading(false));
   };
+  useEffect(() => { fetch(); }, []);
 
-  useEffect(() => { fetchData(); }, []);
-
-  const filtered = orders.filter((o) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return o.orderNo.toLowerCase().includes(q) || o.supplier.name.toLowerCase().includes(q);
-  });
-
+  const filtered = orders.filter((o) => !search || o.supplier.name.toLowerCase().includes(search.toLowerCase()));
   const totalPages = Math.ceil(filtered.length / perPage);
   const paginated = filtered.slice((page - 1) * perPage, page * perPage);
 
-  const statusBadge = (status: string) => {
-    switch (status) {
-      case 'DRAFT': return 'badge bg-gray-100 text-gray-600';
-      case 'ORDERED': return 'badge badge-info';
-      case 'PARTIAL': return 'badge badge-warning';
-      case 'RECEIVED': return 'badge badge-success';
-      case 'CANCELLED': return 'badge badge-danger';
-      default: return 'badge';
-    }
-  };
-
-  const handleReceive = async (orderId: number) => {
-    if (!confirm('Mark this order as fully received?')) return;
-    try {
-      await api.patch(`/purchase-orders/${orderId}/receive`);
-      toast.success('Order marked as received');
-      setSelectedOrder(null);
-      fetchData();
-    } catch {
-      toast.error('Failed to update order');
-    }
+  const handleReceive = async (id: number) => {
+    if (!confirm('Mark as received? This will update stock levels.')) return;
+    try { await api.patch(`/purchase-orders/${id}/receive`); toast.success('Marked as received'); setSelected(null); fetch(); }
+    catch { toast.error('Failed to update'); }
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Purchase Orders</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage supplier orders and receiving</p>
-        </div>
+    <div className="p-6 space-y-5" style={{ fontFamily: "'Poppins', sans-serif" }}>
+      <div>
+        <h1 className="text-xl font-semibold text-[#202223]">Purchase Orders</h1>
+        <p className="text-sm text-[#6D7175] mt-0.5">Track supplier orders and stock receiving</p>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <div className="p-4">
-          <div className="relative max-w-md">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Search by order # or supplier..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <div className="bg-white rounded-xl border border-[#E1E3E5] overflow-hidden">
+        <div className="p-4 border-b border-[#E1E3E5]">
+          <div className="relative max-w-sm">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8C9196]" />
+            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search by supplier..."
+              className="w-full pl-9 pr-3 py-2 border border-[#C9CCCF] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#008060]/30 focus:border-[#008060] bg-[#F6F6F7]" />
           </div>
         </div>
-
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-t border-gray-100 bg-gray-50/50">
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Order #</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Supplier</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Date</th>
-                <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Amount</th>
-                <th className="text-center text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Status</th>
-                <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Action</th>
+              <tr className="bg-[#F6F6F7] border-b border-[#E1E3E5]">
+                {['Order ID', 'Supplier', 'Store', 'Date', 'Amount', 'Status', ''].map((h, i) => (
+                  <th key={i} className={cn('px-5 py-3 text-xs font-semibold text-[#6D7175] uppercase tracking-wide', i === 4 ? 'text-right' : 'text-left')}>{h}</th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {loading ? (
-                <tr><td colSpan={6} className="text-center py-12 text-gray-400">Loading...</td></tr>
-              ) : paginated.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-12 text-gray-400">No purchase orders found</td></tr>
-              ) : (
-                paginated.map((o) => (
-                  <tr key={o.id} className="hover:bg-gray-50/50">
-                    <td className="px-5 py-3 text-sm font-medium text-gray-900">{o.orderNo}</td>
-                    <td className="px-5 py-3 text-sm text-gray-600">{o.supplier.name}</td>
-                    <td className="px-5 py-3 text-sm text-gray-600">{new Date(o.createdAt).toLocaleDateString()}</td>
-                    <td className="px-5 py-3 text-sm font-semibold text-gray-900 text-right">${Number(o.totalAmount).toFixed(2)}</td>
-                    <td className="px-5 py-3 text-center"><span className={statusBadge(o.status)}>{o.status}</span></td>
-                    <td className="px-5 py-3 text-right">
-                      <button onClick={() => setSelectedOrder(o)} className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-blue-500">
-                        <Eye size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
+            <tbody className="divide-y divide-[#E1E3E5]">
+              {loading ? Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i}>{Array.from({ length: 7 }).map((_, j) => <td key={j} className="px-5 py-3.5"><div className="h-4 bg-[#F6F6F7] rounded animate-pulse" /></td>)}</tr>
+              )) : paginated.length === 0 ? (
+                <tr><td colSpan={7} className="text-center py-16"><ClipboardList size={32} className="text-[#C4CDD5] mx-auto mb-3" /><p className="text-sm font-medium text-[#6D7175]">No purchase orders found</p></td></tr>
+              ) : paginated.map((o) => (
+                <tr key={o.id} className="hover:bg-[#F6F6F7] transition-colors">
+                  <td className="px-5 py-3.5 text-sm font-semibold text-[#202223]">PO-{o.id}</td>
+                  <td className="px-5 py-3.5 text-sm text-[#202223] font-medium">{o.supplier.name}</td>
+                  <td className="px-5 py-3.5 text-sm text-[#6D7175]">{o.store?.name || '—'}</td>
+                  <td className="px-5 py-3.5 text-sm text-[#6D7175]">{new Date(o.createdAt).toLocaleDateString()}</td>
+                  <td className="px-5 py-3.5 text-sm font-bold text-[#202223] text-right">${Number(o.totalAmount).toFixed(2)}</td>
+                  <td className="px-5 py-3.5"><span className={cn('px-2.5 py-1 rounded-full text-xs font-semibold', statusStyle(o.status))}>{o.status}</span></td>
+                  <td className="px-5 py-3.5">
+                    <button onClick={() => setSelected(o)} className="p-1.5 rounded-lg hover:bg-[#EEF3FB] text-[#8C9196] hover:text-[#2C6ECB] transition-colors"><Eye size={14} /></button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
-
         {totalPages > 1 && (
-          <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
-            <p className="text-sm text-gray-500">Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, filtered.length)} of {filtered.length}</p>
+          <div className="px-5 py-3 border-t border-[#E1E3E5] flex items-center justify-between">
+            <p className="text-sm text-[#6D7175]">Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, filtered.length)} of {filtered.length}</p>
             <div className="flex gap-1">
-              <button onClick={() => setPage(page - 1)} disabled={page <= 1} className="p-1.5 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50"><ChevronLeft size={16} /></button>
-              <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} className="p-1.5 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50"><ChevronRight size={16} /></button>
+              <button onClick={() => setPage(page - 1)} disabled={page <= 1} className="p-1.5 rounded-lg border border-[#E1E3E5] disabled:opacity-40 hover:bg-[#F6F6F7] transition-colors"><ChevronLeft size={15} /></button>
+              <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} className="p-1.5 rounded-lg border border-[#E1E3E5] disabled:opacity-40 hover:bg-[#F6F6F7] transition-colors"><ChevronRight size={15} /></button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Detail Modal */}
-      {selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <div className="flex items-center gap-2">
-                <ClipboardList size={18} className="text-gray-500" />
-                <h3 className="font-semibold text-gray-900">{selectedOrder.orderNo}</h3>
-                <span className={statusBadge(selectedOrder.status)}>{selectedOrder.status}</span>
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl border border-[#E1E3E5] shadow-2xl w-full max-w-lg mx-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#E1E3E5] sticky top-0 bg-white">
+              <div className="flex items-center gap-3">
+                <h3 className="font-semibold text-[#202223]">PO-{selected.id}</h3>
+                <span className={cn('px-2.5 py-1 rounded-full text-xs font-semibold', statusStyle(selected.status))}>{selected.status}</span>
               </div>
-              <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+              <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg text-[#8C9196] hover:bg-[#F6F6F7] transition-colors"><X size={18} /></button>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <p className="text-gray-500">Supplier</p>
-                  <p className="font-medium">{selectedOrder.supplier.name}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Created</p>
-                  <p className="font-medium">{new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
-                </div>
-                {selectedOrder.expectedDate && (
-                  <div>
-                    <p className="text-gray-500">Expected</p>
-                    <p className="font-medium">{new Date(selectedOrder.expectedDate).toLocaleDateString()}</p>
+            <div className="p-6 space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                {[['Supplier', selected.supplier.name], ['Store', selected.store?.name || '—'], ['Date', new Date(selected.createdAt).toLocaleDateString()], ['Note', selected.note || '—']].map(([l, v]) => (
+                  <div key={l} className="bg-[#F6F6F7] rounded-lg p-3">
+                    <p className="text-xs text-[#6D7175] font-medium mb-0.5">{l}</p>
+                    <p className="text-sm font-semibold text-[#202223]">{v}</p>
                   </div>
-                )}
+                ))}
               </div>
-
-              <div className="border-t border-gray-100 pt-4">
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Items</p>
-                <div className="space-y-2">
-                  {selectedOrder.items.map((item) => (
-                    <div key={item.id} className="flex justify-between text-sm">
-                      <span className="text-gray-600">
-                        {item.productName} <span className="text-gray-400">× {item.quantity}</span>
-                        {item.receivedQuantity > 0 && (
-                          <span className="text-green-600 ml-1">({item.receivedQuantity} received)</span>
-                        )}
-                      </span>
-                      <span className="font-medium">${(Number(item.unitCost) * item.quantity).toFixed(2)}</span>
+              <div>
+                <p className="text-xs font-semibold text-[#6D7175] uppercase tracking-wide mb-3">Items</p>
+                <div className="space-y-2 rounded-lg border border-[#E1E3E5] overflow-hidden">
+                  {selected.items.map((item, i) => (
+                    <div key={item.id} className={cn('flex justify-between items-center px-4 py-3 text-sm', i % 2 === 0 ? 'bg-white' : 'bg-[#F6F6F7]')}>
+                      <span className="text-[#202223] font-medium">Product #{item.productId}</span>
+                      <span className="text-[#6D7175]">qty: {Number(item.qty)} × ${Number(item.costPrice).toFixed(2)}</span>
+                      <span className="font-bold text-[#202223]">${(Number(item.qty) * Number(item.costPrice)).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
               </div>
-
-              <div className="border-t border-gray-100 pt-3 flex justify-between text-lg font-bold">
-                <span>Total</span>
-                <span>${Number(selectedOrder.totalAmount).toFixed(2)}</span>
+              <div className="flex justify-between items-center pt-2 border-t border-[#E1E3E5]">
+                <span className="text-sm font-semibold text-[#202223]">Total</span>
+                <span className="text-xl font-bold text-[#202223]">${Number(selected.totalAmount).toFixed(2)}</span>
               </div>
-
-              {selectedOrder.status === 'ORDERED' && (
-                <button
-                  onClick={() => handleReceive(selectedOrder.id)}
-                  className="w-full bg-green-500 hover:bg-green-600 text-white py-2.5 rounded-lg text-sm font-semibold transition"
-                >
+              {selected.status === 'PENDING' && (
+                <button onClick={() => handleReceive(selected.id)} className="w-full bg-[#008060] hover:bg-[#006E52] text-white py-3 rounded-lg text-sm font-semibold transition-colors">
                   Mark as Received
                 </button>
               )}

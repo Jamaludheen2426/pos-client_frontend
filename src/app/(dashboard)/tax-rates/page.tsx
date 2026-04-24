@@ -1,200 +1,109 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Percent, Plus, Search, Edit2, Loader2, Play, Pause, BadgePercent, CheckCircle } from 'lucide-react';
-import api from '@/lib/api';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { Percent, Plus, Edit3, Loader2, X, Check } from 'lucide-react';
+import api from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 
-interface TaxRate {
-  id: number;
-  name: string;
-  rate: number;
-  isDefault: boolean;
-}
+interface TaxRate { id: number; name: string; rate: number; isDefault: boolean; }
+const inp = 'w-full border border-[#C9CCCF] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#008060]/30 focus:border-[#008060] transition-colors text-[#202223]';
 
 export default function TaxRatesPage() {
   const { user } = useAuthStore();
   const [taxes, setTaxes] = useState<TaxRate[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    rate: '',
-    isDefault: false
-  });
+  const [form, setForm] = useState({ name: '', rate: '', isDefault: false });
 
-  const loadTaxes = async () => {
-    try {
-      setLoading(true);
-      const { data } = await api.get('/tax-rates');
-      setTaxes(data);
-    } catch {
-      toast.error('Failed to load tax rates');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const load = () => { setLoading(true); api.get('/tax-rates').then(({ data }) => setTaxes(data)).catch(() => toast.error('Failed to load')).finally(() => setLoading(false)); };
+  useEffect(() => { load(); }, []);
 
-  useEffect(() => { loadTaxes(); }, []);
-
-  const handleOpenModal = (tax?: TaxRate) => {
-    if (tax) {
-      setEditId(tax.id);
-      setFormData({
-        name: tax.name,
-        rate: tax.rate.toString(),
-        isDefault: tax.isDefault
-      });
-    } else {
-      setEditId(null);
-      setFormData({ name: '', rate: '', isDefault: false });
-    }
-    setIsModalOpen(true);
-  };
+  const openCreate = () => { setEditId(null); setForm({ name: '', rate: '', isDefault: false }); setShowModal(true); };
+  const openEdit = (t: TaxRate) => { setEditId(t.id); setForm({ name: t.name, rate: String(t.rate), isDefault: t.isDefault }); setShowModal(true); };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.rate) return toast.error('Name & rate required');
-    
+    if (!form.name || !form.rate) { toast.error('Name and rate required'); return; }
     setSaving(true);
     try {
-      const payload = {
-        name: formData.name,
-        rate: Number(formData.rate),
-        isDefault: formData.isDefault
-      };
-
-      if (editId) {
-        await api.patch(`/tax-rates/${editId}`, payload);
-        toast.success('Tax rate updated');
-      } else {
-        await api.post('/tax-rates', payload);
-        toast.success('Tax rate created');
-      }
-      setIsModalOpen(false);
-      loadTaxes();
-    } catch {
-      toast.error('Failed to save tax rate');
-    } finally {
-      setSaving(false);
-    }
+      const p = { name: form.name, rate: Number(form.rate), isDefault: form.isDefault };
+      editId ? await api.patch(`/tax-rates/${editId}`, p) : await api.post('/tax-rates', p);
+      toast.success(editId ? 'Updated' : 'Created'); setShowModal(false); load();
+    } catch { toast.error('Failed to save'); } finally { setSaving(false); }
   };
 
-  const setAsDefault = async (id: number) => {
-    try {
-      // Assuming patch handles making others not-default if setting one as default
-      await api.patch(`/tax-rates/${id}`, { isDefault: true });
-      toast.success('Default tax rate updated');
-      loadTaxes();
-    } catch {
-      toast.error('Failed to update default');
-    }
+  const setDefault = async (id: number) => {
+    try { await api.patch(`/tax-rates/${id}`, { isDefault: true }); toast.success('Default updated'); load(); }
+    catch { toast.error('Failed'); }
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-12">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-sky-50 text-sky-600 rounded-xl flex items-center justify-center">
-            <Percent size={24} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Tax Profiles</h1>
-            <p className="text-sm text-slate-500 font-medium">Manage GST, VAT, and specific product taxes</p>
-          </div>
+    <div className="p-6 space-y-5" style={{ fontFamily: "'Poppins', sans-serif" }}>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-[#202223]">Tax rates</h1>
+          <p className="text-sm text-[#6D7175] mt-0.5">Configure GST and tax slabs for your products</p>
         </div>
         {user?.role !== 'CASHIER' && (
-          <button onClick={() => handleOpenModal()} className="flex items-center gap-2 bg-sky-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-sky-700 transition shadow-sm shadow-sky-600/20">
-            <Plus size={18} /> Add Tax Rate
+          <button onClick={openCreate} className="flex items-center gap-2 bg-[#008060] hover:bg-[#006E52] text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+            <Plus size={16} /> Add rate
           </button>
         )}
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
-        <div className="flex-1 overflow-x-auto">
-          {loading ? (
-             <div className="flex flex-col items-center justify-center h-[300px] text-slate-400 space-y-4">
-                <Loader2 size={32} className="animate-spin text-sky-600" />
-                <p className="font-medium">Loading taxes...</p>
-             </div>
-          ) : taxes.length === 0 ? (
-             <div className="flex flex-col items-center justify-center h-[300px] text-slate-400 space-y-4">
-                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center"><BadgePercent size={24} className="text-slate-300" /></div>
-                <p className="font-medium text-slate-500">No tax rates defined. Products will have 0% tax by default.</p>
-             </div>
-          ) : (
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100 text-xs uppercase text-slate-500 font-semibold">
-                  <th className="p-4 pl-6">Tax Name</th>
-                  <th className="p-4">Rate (%)</th>
-                  <th className="p-4">Default</th>
-                  {user?.role !== 'CASHIER' && <th className="p-4 text-right pr-6">Options</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {taxes.map((tax) => (
-                  <tr key={tax.id} className="hover:bg-slate-50/80 transition group">
-                    <td className="p-4 pl-6 font-bold text-slate-900 text-sm">{tax.name}</td>
-                    <td className="p-4">
-                      <span className="font-bold text-sky-700 bg-sky-50 px-3 py-1 rounded-lg text-sm border border-sky-100">
-                         {tax.rate}%
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      {tax.isDefault ? (
-                        <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 w-fit px-2 py-1 rounded-md"><CheckCircle size={14}/> Default</span>
-                      ) : (
-                         <button onClick={() => setAsDefault(tax.id)} className="text-xs font-semibold text-slate-400 hover:text-sky-600 transition" disabled={user?.role === 'CASHIER'}>Set as Default</button>
-                      )}
-                    </td>
-                    {user?.role !== 'CASHIER' && (
-                      <td className="p-4 text-right pr-6">
-                        <button onClick={() => handleOpenModal(tax)} className="p-2 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg opacity-0 group-hover:opacity-100 transition"><Edit2 size={16} /></button>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+      <div className="bg-white rounded-xl border border-[#E1E3E5] overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="bg-[#F6F6F7] border-b border-[#E1E3E5]">
+              {['Name', 'Rate', 'Default', ''].map((h) => (
+                <th key={h} className="px-5 py-3 text-xs font-semibold text-[#6D7175] uppercase tracking-wide text-left">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#E1E3E5]">
+            {loading ? Array.from({ length: 3 }).map((_, i) => (
+              <tr key={i}>{Array.from({ length: 4 }).map((_, j) => <td key={j} className="px-5 py-4"><div className="h-4 bg-[#F6F6F7] rounded animate-pulse" /></td>)}</tr>
+            )) : taxes.length === 0 ? (
+              <tr><td colSpan={4} className="text-center py-16"><Percent size={32} className="text-[#C4CDD5] mx-auto mb-3" /><p className="text-sm font-medium text-[#6D7175]">No tax rates defined</p></td></tr>
+            ) : taxes.map((t) => (
+              <tr key={t.id} className="hover:bg-[#F6F6F7] transition-colors group">
+                <td className="px-5 py-4 text-sm font-semibold text-[#202223]">{t.name}</td>
+                <td className="px-5 py-4"><span className="bg-[#EEF3FB] text-[#2C6ECB] text-sm font-bold px-3 py-1 rounded-lg">{t.rate}%</span></td>
+                <td className="px-5 py-4">
+                  {t.isDefault ? (
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-[#008060] bg-[#EAF5F0] w-fit px-2.5 py-1 rounded-full"><Check size={12} />Default</span>
+                  ) : (
+                    <button onClick={() => setDefault(t.id)} disabled={user?.role === 'CASHIER'} className="text-xs font-semibold text-[#6D7175] hover:text-[#008060] transition-colors disabled:pointer-events-none">Set as default</button>
+                  )}
+                </td>
+                <td className="px-5 py-4">
+                  {user?.role !== 'CASHIER' && <button onClick={() => openEdit(t)} className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-[#EEF3FB] text-[#8C9196] hover:text-[#2C6ECB] transition-all"><Edit3 size={14} /></button>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm animate-in fade-in zoom-in-95">
-             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-               <h3 className="text-lg font-bold">{editId ? 'Edit Tax Rate' : 'New Tax Rate'}</h3>
-               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><Plus size={24} className="rotate-45" /></button>
-             </div>
-             
-             <form onSubmit={handleSave} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Tax Profile Name *</label>
-                  <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none text-sm" placeholder="e.g. Standard GST" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Tax Percentage (%) *</label>
-                  <input required type="number" step="0.01" value={formData.rate} onChange={e => setFormData({...formData, rate: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500/20 outline-none text-sm" placeholder="18.00" />
-                </div>
-                {!editId && (
-                  <label className="flex items-center gap-2 cursor-pointer mt-4 group">
-                    <input type="checkbox" checked={formData.isDefault} onChange={e => setFormData({...formData, isDefault: e.target.checked})} className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-600" />
-                    <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 transition">Set as default rate for new products</span>
-                  </label>
-                )}
-                <div className="pt-4 flex justify-end gap-3">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-sm font-semibold hover:bg-slate-100 rounded-xl">Cancel</button>
-                  <button type="submit" disabled={saving} className="px-5 py-2 text-sm font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-xl disabled:opacity-70">Save</button>
-                </div>
-             </form>
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl border border-[#E1E3E5] shadow-2xl w-full max-w-sm mx-4">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#E1E3E5]">
+              <h3 className="font-semibold text-[#202223]">{editId ? 'Edit tax rate' : 'Add tax rate'}</h3>
+              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg text-[#8C9196] hover:bg-[#F6F6F7] transition-colors"><X size={18} /></button>
+            </div>
+            <form onSubmit={handleSave} className="p-6 space-y-4">
+              <div><label className="block text-xs font-semibold text-[#6D7175] mb-1.5 uppercase tracking-wide">Name *</label><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. GST 18%" className={inp} /></div>
+              <div><label className="block text-xs font-semibold text-[#6D7175] mb-1.5 uppercase tracking-wide">Rate (%) *</label><input required type="number" step="0.01" value={form.rate} onChange={(e) => setForm({ ...form, rate: e.target.value })} placeholder="18.00" className={inp} /></div>
+              {!editId && <label className="flex items-center gap-2.5 cursor-pointer"><input type="checkbox" checked={form.isDefault} onChange={(e) => setForm({ ...form, isDefault: e.target.checked })} className="w-4 h-4 rounded border-[#C9CCCF] accent-[#008060]" /><span className="text-sm font-medium text-[#202223]">Set as default</span></label>}
+              <div className="pt-2 flex justify-end gap-3">
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm font-semibold text-[#6D7175] border border-[#C9CCCF] rounded-lg bg-white hover:bg-[#F6F6F7] transition-colors">Cancel</button>
+                <button type="submit" disabled={saving} className="flex items-center gap-2 bg-[#008060] hover:bg-[#006E52] text-white px-5 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 transition-colors">{saving && <Loader2 size={14} className="animate-spin" />}Save</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

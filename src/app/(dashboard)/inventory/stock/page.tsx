@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import {
-  ArrowLeftRight, Plus, Minus, History, Loader2,
+  ArrowLeftRight, Plus, History, Loader2,
   ChevronLeft, ChevronRight, Filter, Package, ArrowRight,
 } from 'lucide-react';
 import api from '@/lib/api';
@@ -173,8 +173,8 @@ export default function StockManagementPage() {
     { key: 'history', label: 'Movement History', icon: History },
   ];
 
-  const inputClass = 'w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
-  const selectClass = 'w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white';
+  const inputClass = 'w-full border border-[#C9CCCF] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#008060]/30 focus:border-[#008060]';
+  const selectClass = 'w-full border border-[#C9CCCF] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#008060]/30 focus:border-[#008060] bg-white';
 
   const histTotalPages = Math.ceil(histTotal / perPage);
 
@@ -184,15 +184,19 @@ export default function StockManagementPage() {
 
   const typeBadge = (type: string) => {
     const colors: Record<string, string> = {
-      ADJUSTMENT: 'bg-blue-50 text-blue-600',
-      TRANSFER: 'bg-purple-50 text-purple-600',
-      SALE: 'bg-green-50 text-green-600',
-      PURCHASE: 'bg-yellow-50 text-yellow-700',
-      RETURN: 'bg-orange-50 text-orange-600',
+      ADJUSTMENT: 'bg-[#EEF3FB] text-[#2C6ECB]',
+      TRANSFER_IN: 'bg-[#F4F0FF] text-[#5C4CCC]',
+      TRANSFER_OUT: 'bg-[#F4F0FF] text-[#5C4CCC]',
+      SALE: 'bg-[#EAF5F0] text-[#008060]',
+      PURCHASE: 'bg-[#FFF4E4] text-[#B25000]',
+    };
+    const labels: Record<string, string> = {
+      TRANSFER_IN: 'Transfer In',
+      TRANSFER_OUT: 'Transfer Out',
     };
     return (
-      <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', colors[type] || 'bg-gray-50 text-gray-600')}>
-        {type}
+      <span className={cn('px-2.5 py-1 rounded-full text-xs font-semibold', colors[type] || 'bg-[#F6F6F7] text-[#6D7175]')}>
+        {labels[type] || type}
       </span>
     );
   };
@@ -200,27 +204,29 @@ export default function StockManagementPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 size={24} className="animate-spin text-gray-400" />
+        <Loader2 size={24} className="animate-spin text-[#8C9196]" />
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="p-6 space-y-5" style={{ fontFamily: "'Poppins', sans-serif" }}>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Stock Management</h1>
-        <p className="text-gray-500 text-sm mt-1">Adjust inventory, transfer between stores, and view movement history</p>
+        <h1 className="text-2xl font-bold text-[#202223]">Stock Management</h1>
+        <p className="text-[#6D7175] text-sm mt-1">Adjust inventory, transfer between stores, and view movement history</p>
       </div>
 
       {/* Sub-tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-6 w-fit">
+      <div className="flex gap-1 bg-[#F6F6F7] rounded-lg p-1 mb-6 w-fit border border-[#E1E3E5]">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition',
-              activeTab === tab.key ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700',
+              activeTab === tab.key
+                ? 'bg-white shadow text-[#202223] border border-[#E1E3E5]'
+                : 'text-[#6D7175] hover:text-[#202223]',
             )}
           >
             <tab.icon size={14} />
@@ -231,12 +237,12 @@ export default function StockManagementPage() {
 
       {/* Stock Adjustments */}
       {activeTab === 'adjustments' && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-            <h3 className="font-semibold text-gray-900 mb-5">Adjust Stock</h3>
+        <div className="space-y-5">
+          <div className="bg-white rounded-xl border border-[#E1E3E5] p-6">
+            <h3 className="font-semibold text-[#202223] mb-5">Adjust Stock</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Product *</label>
+                <label className="block text-xs font-semibold text-[#6D7175] mb-1.5 uppercase tracking-wide">Product *</label>
                 <select value={adjProductId} onChange={(e) => setAdjProductId(e.target.value)} className={selectClass}>
                   <option value="">Select product...</option>
                   {products.map((p) => (
@@ -245,7 +251,7 @@ export default function StockManagementPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Store *</label>
+                <label className="block text-xs font-semibold text-[#6D7175] mb-1.5 uppercase tracking-wide">Store *</label>
                 <select value={adjStoreId} onChange={(e) => setAdjStoreId(e.target.value)} className={selectClass}>
                   <option value="">Select store...</option>
                   {stores.map((s) => (
@@ -254,54 +260,54 @@ export default function StockManagementPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Quantity * (use negative to reduce)</label>
+                <label className="block text-xs font-semibold text-[#6D7175] mb-1.5 uppercase tracking-wide">Quantity * (use negative to reduce)</label>
                 <input type="number" value={adjQty} onChange={(e) => setAdjQty(e.target.value)}
                   placeholder="e.g. 10 or -5" className={inputClass} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+                <label className="block text-xs font-semibold text-[#6D7175] mb-1.5 uppercase tracking-wide">Reason</label>
                 <input value={adjReason} onChange={(e) => setAdjReason(e.target.value)}
                   placeholder="e.g. Damaged goods, Recount" className={inputClass} />
               </div>
             </div>
             <button onClick={handleAdjust} disabled={adjSubmitting}
-              className="mt-5 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition disabled:opacity-50">
+              className="mt-5 bg-[#008060] hover:bg-[#006E52] text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition disabled:opacity-50">
               {adjSubmitting && <Loader2 size={14} className="animate-spin" />}
               Submit Adjustment
             </button>
           </div>
 
           {/* Recent adjustments */}
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h3 className="font-semibold text-gray-900 text-sm">Recent Adjustments</h3>
+          <div className="bg-white rounded-xl border border-[#E1E3E5]">
+            <div className="px-5 py-4 border-b border-[#E1E3E5]">
+              <h3 className="font-semibold text-[#202223] text-sm">Recent Adjustments</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-50/50">
-                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Product</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Store</th>
-                    <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Qty</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Reason</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Date</th>
+                  <tr className="bg-[#F6F6F7] border-b border-[#E1E3E5]">
+                    <th className="text-left text-xs font-semibold text-[#6D7175] uppercase tracking-wide px-5 py-3">Product</th>
+                    <th className="text-left text-xs font-semibold text-[#6D7175] uppercase tracking-wide px-5 py-3">Store</th>
+                    <th className="text-right text-xs font-semibold text-[#6D7175] uppercase tracking-wide px-5 py-3">Qty</th>
+                    <th className="text-left text-xs font-semibold text-[#6D7175] uppercase tracking-wide px-5 py-3">Reason</th>
+                    <th className="text-left text-xs font-semibold text-[#6D7175] uppercase tracking-wide px-5 py-3">Date</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-[#E1E3E5]">
                   {adjLoading ? (
-                    <tr><td colSpan={5} className="text-center py-8 text-gray-400">Loading...</td></tr>
+                    <tr><td colSpan={5} className="text-center py-8 text-[#8C9196]">Loading...</td></tr>
                   ) : adjMovements.length === 0 ? (
-                    <tr><td colSpan={5} className="text-center py-8 text-gray-400">No adjustments yet</td></tr>
+                    <tr><td colSpan={5} className="text-center py-8 text-[#8C9196]">No adjustments yet</td></tr>
                   ) : (
                     adjMovements.map((m) => (
-                      <tr key={m.id} className="hover:bg-gray-50/50">
-                        <td className="px-5 py-3 text-sm text-gray-900">{m.product?.name || `Product #${m.productId}`}</td>
-                        <td className="px-5 py-3 text-sm text-gray-600">{m.store?.name || `Store #${m.storeId}`}</td>
-                        <td className={cn('px-5 py-3 text-sm font-medium text-right', m.qty > 0 ? 'text-green-600' : 'text-red-500')}>
+                      <tr key={m.id} className="hover:bg-[#F6F6F7] transition-colors">
+                        <td className="px-5 py-3 text-sm text-[#202223]">{m.product?.name || `Product #${m.productId}`}</td>
+                        <td className="px-5 py-3 text-sm text-[#6D7175]">{m.store?.name || `Store #${m.storeId}`}</td>
+                        <td className={cn('px-5 py-3 text-sm font-semibold text-right', m.qty > 0 ? 'text-[#008060]' : 'text-[#D72C0D]')}>
                           {m.qty > 0 ? `+${m.qty}` : m.qty}
                         </td>
-                        <td className="px-5 py-3 text-sm text-gray-500">{m.reason || '-'}</td>
-                        <td className="px-5 py-3 text-sm text-gray-400">{formatDate(m.createdAt)}</td>
+                        <td className="px-5 py-3 text-sm text-[#6D7175]">{m.reason || '-'}</td>
+                        <td className="px-5 py-3 text-sm text-[#8C9196]">{formatDate(m.createdAt)}</td>
                       </tr>
                     ))
                   )}
@@ -314,12 +320,12 @@ export default function StockManagementPage() {
 
       {/* Stock Transfers */}
       {activeTab === 'transfers' && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-            <h3 className="font-semibold text-gray-900 mb-5">Transfer Stock</h3>
+        <div className="space-y-5">
+          <div className="bg-white rounded-xl border border-[#E1E3E5] p-6">
+            <h3 className="font-semibold text-[#202223] mb-5">Transfer Stock</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Product *</label>
+                <label className="block text-xs font-semibold text-[#6D7175] mb-1.5 uppercase tracking-wide">Product *</label>
                 <select value={trfProductId} onChange={(e) => setTrfProductId(e.target.value)} className={selectClass}>
                   <option value="">Select product...</option>
                   {products.map((p) => (
@@ -328,7 +334,7 @@ export default function StockManagementPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">From Store *</label>
+                <label className="block text-xs font-semibold text-[#6D7175] mb-1.5 uppercase tracking-wide">From Store *</label>
                 <select value={trfFromStoreId} onChange={(e) => setTrfFromStoreId(e.target.value)} className={selectClass}>
                   <option value="">Select source store...</option>
                   {stores.map((s) => (
@@ -337,7 +343,7 @@ export default function StockManagementPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">To Store *</label>
+                <label className="block text-xs font-semibold text-[#6D7175] mb-1.5 uppercase tracking-wide">To Store *</label>
                 <select value={trfToStoreId} onChange={(e) => setTrfToStoreId(e.target.value)} className={selectClass}>
                   <option value="">Select destination store...</option>
                   {stores.map((s) => (
@@ -346,18 +352,18 @@ export default function StockManagementPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
+                <label className="block text-xs font-semibold text-[#6D7175] mb-1.5 uppercase tracking-wide">Quantity *</label>
                 <input type="number" min="1" value={trfQty} onChange={(e) => setTrfQty(e.target.value)}
                   placeholder="e.g. 10" className={inputClass} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Note</label>
+                <label className="block text-xs font-semibold text-[#6D7175] mb-1.5 uppercase tracking-wide">Note</label>
                 <input value={trfNote} onChange={(e) => setTrfNote(e.target.value)}
                   placeholder="Optional note" className={inputClass} />
               </div>
             </div>
             <button onClick={handleTransfer} disabled={trfSubmitting}
-              className="mt-5 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition disabled:opacity-50">
+              className="mt-5 bg-[#008060] hover:bg-[#006E52] text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition disabled:opacity-50">
               {trfSubmitting && <Loader2 size={14} className="animate-spin" />}
               <ArrowRight size={14} />
               Transfer Stock
@@ -365,36 +371,36 @@ export default function StockManagementPage() {
           </div>
 
           {/* Recent transfers */}
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h3 className="font-semibold text-gray-900 text-sm">Recent Transfers</h3>
+          <div className="bg-white rounded-xl border border-[#E1E3E5]">
+            <div className="px-5 py-4 border-b border-[#E1E3E5]">
+              <h3 className="font-semibold text-[#202223] text-sm">Recent Transfers</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-50/50">
-                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Product</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">From</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">To</th>
-                    <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Qty</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Note</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Date</th>
+                  <tr className="bg-[#F6F6F7] border-b border-[#E1E3E5]">
+                    <th className="text-left text-xs font-semibold text-[#6D7175] uppercase tracking-wide px-5 py-3">Product</th>
+                    <th className="text-left text-xs font-semibold text-[#6D7175] uppercase tracking-wide px-5 py-3">From</th>
+                    <th className="text-left text-xs font-semibold text-[#6D7175] uppercase tracking-wide px-5 py-3">To</th>
+                    <th className="text-right text-xs font-semibold text-[#6D7175] uppercase tracking-wide px-5 py-3">Qty</th>
+                    <th className="text-left text-xs font-semibold text-[#6D7175] uppercase tracking-wide px-5 py-3">Note</th>
+                    <th className="text-left text-xs font-semibold text-[#6D7175] uppercase tracking-wide px-5 py-3">Date</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-[#E1E3E5]">
                   {trfLoading ? (
-                    <tr><td colSpan={6} className="text-center py-8 text-gray-400">Loading...</td></tr>
+                    <tr><td colSpan={6} className="text-center py-8 text-[#8C9196]">Loading...</td></tr>
                   ) : trfMovements.length === 0 ? (
-                    <tr><td colSpan={6} className="text-center py-8 text-gray-400">No transfers yet</td></tr>
+                    <tr><td colSpan={6} className="text-center py-8 text-[#8C9196]">No transfers yet</td></tr>
                   ) : (
                     trfMovements.map((m) => (
-                      <tr key={m.id} className="hover:bg-gray-50/50">
-                        <td className="px-5 py-3 text-sm text-gray-900">{m.product?.name || `Product #${m.productId}`}</td>
-                        <td className="px-5 py-3 text-sm text-gray-600">{m.fromStore?.name || `Store #${m.fromStoreId}`}</td>
-                        <td className="px-5 py-3 text-sm text-gray-600">{m.toStore?.name || `Store #${m.toStoreId}`}</td>
-                        <td className="px-5 py-3 text-sm font-medium text-right text-gray-900">{m.qty}</td>
-                        <td className="px-5 py-3 text-sm text-gray-500">{m.note || '-'}</td>
-                        <td className="px-5 py-3 text-sm text-gray-400">{formatDate(m.createdAt)}</td>
+                      <tr key={m.id} className="hover:bg-[#F6F6F7] transition-colors">
+                        <td className="px-5 py-3 text-sm text-[#202223]">{m.product?.name || `Product #${m.productId}`}</td>
+                        <td className="px-5 py-3 text-sm text-[#6D7175]">{m.fromStore?.name || `Store #${m.fromStoreId}`}</td>
+                        <td className="px-5 py-3 text-sm text-[#6D7175]">{m.toStore?.name || `Store #${m.toStoreId}`}</td>
+                        <td className="px-5 py-3 text-sm font-semibold text-right text-[#202223]">{m.qty}</td>
+                        <td className="px-5 py-3 text-sm text-[#6D7175]">{m.note || '-'}</td>
+                        <td className="px-5 py-3 text-sm text-[#8C9196]">{formatDate(m.createdAt)}</td>
                       </tr>
                     ))
                   )}
@@ -407,67 +413,68 @@ export default function StockManagementPage() {
 
       {/* Movement History */}
       {activeTab === 'history' && (
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-          <div className="p-4 flex flex-wrap items-center gap-3 border-b border-gray-100">
-            <Filter size={16} className="text-gray-400" />
+        <div className="bg-white rounded-xl border border-[#E1E3E5]">
+          <div className="p-4 flex flex-wrap items-center gap-3 border-b border-[#E1E3E5]">
+            <Filter size={16} className="text-[#8C9196]" />
             <select value={histFilterProduct} onChange={(e) => { setHistFilterProduct(e.target.value); setHistPage(1); }}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              className="border border-[#C9CCCF] rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#008060]/30 focus:border-[#008060]">
               <option value="">All Products</option>
               {products.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
             <select value={histFilterStore} onChange={(e) => { setHistFilterStore(e.target.value); setHistPage(1); }}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              className="border border-[#C9CCCF] rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#008060]/30 focus:border-[#008060]">
               <option value="">All Stores</option>
               {stores.map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
             <select value={histFilterType} onChange={(e) => { setHistFilterType(e.target.value); setHistPage(1); }}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              className="border border-[#C9CCCF] rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#008060]/30 focus:border-[#008060]">
               <option value="">All Types</option>
               <option value="ADJUSTMENT">Adjustment</option>
-              <option value="TRANSFER">Transfer</option>
+              <option value="TRANSFER">Transfer (In & Out)</option>
+              <option value="TRANSFER_IN">Transfer In</option>
+              <option value="TRANSFER_OUT">Transfer Out</option>
               <option value="SALE">Sale</option>
               <option value="PURCHASE">Purchase</option>
-              <option value="RETURN">Return</option>
             </select>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-gray-50/50">
-                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Product</th>
-                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Store</th>
-                  <th className="text-center text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Type</th>
-                  <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Qty</th>
-                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Reason / Note</th>
-                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Date</th>
+                <tr className="bg-[#F6F6F7] border-b border-[#E1E3E5]">
+                  <th className="text-left text-xs font-semibold text-[#6D7175] uppercase tracking-wide px-5 py-3">Product</th>
+                  <th className="text-left text-xs font-semibold text-[#6D7175] uppercase tracking-wide px-5 py-3">Store</th>
+                  <th className="text-center text-xs font-semibold text-[#6D7175] uppercase tracking-wide px-5 py-3">Type</th>
+                  <th className="text-right text-xs font-semibold text-[#6D7175] uppercase tracking-wide px-5 py-3">Qty</th>
+                  <th className="text-left text-xs font-semibold text-[#6D7175] uppercase tracking-wide px-5 py-3">Reason / Note</th>
+                  <th className="text-left text-xs font-semibold text-[#6D7175] uppercase tracking-wide px-5 py-3">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[#E1E3E5]">
                 {histLoading ? (
-                  <tr><td colSpan={6} className="text-center py-12 text-gray-400">Loading...</td></tr>
+                  <tr><td colSpan={6} className="text-center py-12 text-[#8C9196]">Loading...</td></tr>
                 ) : histMovements.length === 0 ? (
-                  <tr><td colSpan={6} className="text-center py-12 text-gray-400">No movements found</td></tr>
+                  <tr><td colSpan={6} className="text-center py-12 text-[#8C9196]">No movements found</td></tr>
                 ) : (
                   histMovements.map((m) => (
-                    <tr key={m.id} className="hover:bg-gray-50/50">
+                    <tr key={m.id} className="hover:bg-[#F6F6F7] transition-colors">
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2">
-                          <Package size={14} className="text-gray-400" />
-                          <span className="text-sm text-gray-900">{m.product?.name || `Product #${m.productId}`}</span>
+                          <Package size={14} className="text-[#8C9196]" />
+                          <span className="text-sm text-[#202223]">{m.product?.name || `Product #${m.productId}`}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-sm text-gray-600">{m.store?.name || `Store #${m.storeId}`}</td>
+                      <td className="px-5 py-3 text-sm text-[#6D7175]">{m.store?.name || `Store #${m.storeId}`}</td>
                       <td className="px-5 py-3 text-center">{typeBadge(m.type)}</td>
-                      <td className={cn('px-5 py-3 text-sm font-medium text-right', m.qty > 0 ? 'text-green-600' : 'text-red-500')}>
+                      <td className={cn('px-5 py-3 text-sm font-semibold text-right', m.qty > 0 ? 'text-[#008060]' : 'text-[#D72C0D]')}>
                         {m.qty > 0 ? `+${m.qty}` : m.qty}
                       </td>
-                      <td className="px-5 py-3 text-sm text-gray-500">{m.reason || m.note || '-'}</td>
-                      <td className="px-5 py-3 text-sm text-gray-400">{formatDate(m.createdAt)}</td>
+                      <td className="px-5 py-3 text-sm text-[#6D7175]">{m.reason || m.note || '-'}</td>
+                      <td className="px-5 py-3 text-sm text-[#8C9196]">{formatDate(m.createdAt)}</td>
                     </tr>
                   ))
                 )}
@@ -476,17 +483,17 @@ export default function StockManagementPage() {
           </div>
 
           {histTotalPages > 1 && (
-            <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
-              <p className="text-sm text-gray-500">
+            <div className="px-5 py-3 border-t border-[#E1E3E5] flex items-center justify-between">
+              <p className="text-sm text-[#6D7175]">
                 Page {histPage} of {histTotalPages} ({histTotal} total)
               </p>
               <div className="flex gap-1">
                 <button onClick={() => setHistPage(histPage - 1)} disabled={histPage <= 1}
-                  className="p-1.5 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50">
+                  className="p-1.5 rounded-lg border border-[#E1E3E5] disabled:opacity-40 hover:bg-[#F6F6F7] transition-colors">
                   <ChevronLeft size={16} />
                 </button>
                 <button onClick={() => setHistPage(histPage + 1)} disabled={histPage >= histTotalPages}
-                  className="p-1.5 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50">
+                  className="p-1.5 rounded-lg border border-[#E1E3E5] disabled:opacity-40 hover:bg-[#F6F6F7] transition-colors">
                   <ChevronRight size={16} />
                 </button>
               </div>

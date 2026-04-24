@@ -3,17 +3,14 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
-  DollarSign, ShoppingCart, Package, Users, TrendingUp, TrendingDown,
-  ArrowUpRight, CreditCard, Banknote, Smartphone, Clock, AlertTriangle,
-  Activity, Zap, ArrowRight, RefreshCw, ReceiptText, Flame, Eye,
+  DollarSign, ShoppingBag, Users, Package,
+  TrendingUp, TrendingDown, RefreshCw,
+  Banknote, CreditCard, Smartphone,
+  AlertTriangle, ArrowRight, ReceiptText,
 } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import { cn } from '@/lib/utils';
-
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
 
 interface DashboardStats {
   todaySales: number;
@@ -45,132 +42,87 @@ interface DashboardStats {
   }[];
 }
 
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
-
-const money = (v: number) =>
+const fmt = (v: number) =>
   `$${Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const shortDay = (dateStr: string) => {
-  const d = new Date(dateStr + 'T12:00:00');
-  return d.toLocaleDateString('en-US', { weekday: 'short' });
+const shortDay = (dateStr: string) =>
+  new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' });
+
+const paymentMeta: Record<string, { icon: React.ElementType; color: string; label: string }> = {
+  CASH:   { icon: Banknote,    color: '#008060', label: 'Cash'   },
+  CARD:   { icon: CreditCard,  color: '#2C6ECB', label: 'Card'   },
+  UPI:    { icon: Smartphone,  color: '#E67E22', label: 'UPI'    },
 };
 
-const paymentMeta: Record<string, { icon: typeof CreditCard; color: string; bg: string; text: string }> = {
-  CASH: { icon: Banknote, color: '#10B981', bg: 'bg-emerald-50', text: 'text-emerald-500' },
-  CARD: { icon: CreditCard, color: '#3B82F6', bg: 'bg-blue-50', text: 'text-blue-500' },
-  UPI:  { icon: Smartphone, color: '#F59E0B', bg: 'bg-amber-50', text: 'text-amber-500' },
-};
-
-const getPM = (method: string) => paymentMeta[method] || paymentMeta.CASH;
-
-/* ------------------------------------------------------------------ */
-/*  Skeleton                                                           */
-/* ------------------------------------------------------------------ */
-
-const Skeleton = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
-  <div className={cn('animate-pulse bg-white/20 rounded-xl', className)} style={style} />
-);
-const SkeletonDark = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
-  <div className={cn('animate-pulse bg-slate-200 rounded-xl', className)} style={style} />
+/* ── Skeleton pulse ── */
+const Skel = ({ w = 'w-24', h = 'h-5' }: { w?: string; h?: string }) => (
+  <div className={cn('animate-pulse bg-[#E1E3E5] rounded-md', w, h)} />
 );
 
-/* ------------------------------------------------------------------ */
-/*  Area Chart (SVG)                                                   */
-/* ------------------------------------------------------------------ */
+/* ── Tiny inline bar chart ── */
+const BarChart = ({ data, max }: { data: { date: string; revenue: number }[]; max: number }) => (
+  <div className="flex items-end gap-1 h-16">
+    {data.map((d) => {
+      const isToday = d.date === new Date().toISOString().split('T')[0];
+      const pct = max > 0 ? (d.revenue / max) * 100 : 0;
+      return (
+        <div key={d.date} className="flex-1 flex flex-col items-center gap-1 group relative">
+          <div
+            className="w-full rounded-sm transition-all"
+            style={{
+              height: `${Math.max(pct, 4)}%`,
+              background: isToday ? '#008060' : '#B5D5CB',
+              minHeight: 4,
+            }}
+          />
+          <span className={cn('text-[9px] font-semibold', isToday ? 'text-[#008060]' : 'text-[#6D7175]')}>
+            {shortDay(d.date)}
+          </span>
+        </div>
+      );
+    })}
+  </div>
+);
 
-const AreaChart = ({ data, maxVal }: { data: { date: string; revenue: number; count: number }[]; maxVal: number }) => {
-  const w = 600;
-  const h = 220;
-  const padX = 0;
-  const padY = 20;
-  const innerW = w - padX * 2;
-  const innerH = h - padY * 2;
-
-  const points = data.map((d, i) => ({
-    x: padX + (i / Math.max(data.length - 1, 1)) * innerW,
-    y: padY + innerH - (d.revenue / Math.max(maxVal, 1)) * innerH,
-    ...d,
-  }));
-
-  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  const areaPath = `${linePath} L ${points[points.length - 1]?.x ?? w} ${h} L ${points[0]?.x ?? 0} ${h} Z`;
-
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="areaGradPremium" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" />
-          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      
-      {/* Grid lines */}
-      {[0.33, 0.66, 1].map((pct) => (
-        <line
-          key={pct}
-          x1={0} y1={padY + innerH * (1 - pct)} x2={w} y2={padY + innerH * (1 - pct)}
-          stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4 4"
-        />
-      ))}
-      
-      <path d={areaPath} fill="url(#areaGradPremium)" />
-      <path d={linePath} fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      
-      {points.map((p, i) => {
-        const isToday = p.date === new Date().toISOString().split('T')[0];
-        return (
-          <g key={p.date}>
-            {isToday && <circle cx={p.x} cy={p.y} r="8" fill="#3b82f6" opacity="0.2" />}
-            <circle cx={p.x} cy={p.y} r={isToday ? 4 : 2} fill="#fff" stroke="#3b82f6" strokeWidth={2} />
-          </g>
-        );
-      })}
-    </svg>
-  );
-};
-
-/* ------------------------------------------------------------------ */
-/*  Donut Ring (SVG)                                                   */
-/* ------------------------------------------------------------------ */
-
-const DonutRing = ({ data }: { data: { method: string; total: number }[] }) => {
+/* ── Donut chart ── */
+const Donut = ({ data }: { data: { method: string; total: number }[] }) => {
   const total = data.reduce((s, d) => s + d.total, 0) || 1;
-  const size = 180;
-  const strokeW = 16;
-  const radius = (size - strokeW) / 2;
-  const circumference = 2 * Math.PI * radius;
+  const size = 120;
+  const sw = 14;
+  const r = (size - sw) / 2;
+  const circ = 2 * Math.PI * r;
   let offset = 0;
+  const colors = ['#008060', '#2C6ECB', '#E67E22', '#6D7175'];
 
   return (
-    <div className="relative flex items-center justify-center">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#f8fafc" strokeWidth={strokeW} />
+    <div className="relative inline-flex">
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#F1F1F1" strokeWidth={sw} />
         {data.map((d, i) => {
           const pct = d.total / total;
-          const dashLen = pct * circumference;
-          const dashOffset = offset;
-          offset += dashLen;
-          return (
+          const dash = pct * circ;
+          const seg = (
             <circle
-              key={d.method} cx={size / 2} cy={size / 2} r={radius} fill="none"
-              stroke={getPM(d.method).color} strokeWidth={strokeW} strokeDasharray={`${dashLen} ${circumference - dashLen}`}
-              strokeDashoffset={-dashOffset} strokeLinecap="round"
+              key={d.method}
+              cx={size / 2} cy={size / 2} r={r}
+              fill="none"
+              stroke={colors[i % colors.length]}
+              strokeWidth={sw}
+              strokeDasharray={`${dash} ${circ - dash}`}
+              strokeDashoffset={-offset}
+              strokeLinecap="butt"
             />
           );
+          offset += dash;
+          return seg;
         })}
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-xl font-display font-extrabold text-slate-800">{money(total)}</span>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-xs font-bold text-[#1A1A1A]">{fmt(total)}</span>
       </div>
     </div>
   );
 };
-
-/* ------------------------------------------------------------------ */
-/*  Page                                                               */
-/* ------------------------------------------------------------------ */
 
 export default function OverviewPage() {
   const user = useAuthStore((s) => s.user);
@@ -187,261 +139,301 @@ export default function OverviewPage() {
 
   useEffect(() => { load(); }, []);
 
-  const refresh = () => { setRefreshing(true); load(); };
-
-  const maxChartRevenue = useMemo(
-    () => (stats?.dailyChart ? Math.max(...stats.dailyChart.map((d) => d.revenue), 1) : 1),
+  const maxRev = useMemo(
+    () => Math.max(...(stats?.dailyChart?.map((d) => d.revenue) ?? [1]), 1),
     [stats],
   );
 
-  const totalPayments = useMemo(
-    () => stats?.paymentBreakdown?.reduce((s, p) => s + p.total, 0) || 1,
-    [stats],
-  );
+  const greeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
-    <div className="space-y-6 max-w-[1400px] mx-auto pb-12 px-4 py-8">
+    <div className="p-6 max-w-[1280px] mx-auto space-y-6" style={{ fontFamily: "'Poppins', sans-serif" }}>
 
-      {/* ═ HEADER ═ */}
-      <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-display font-bold text-slate-800 tracking-tight">
-            Dashboard
+          <h1 className="text-[22px] font-bold text-[#1A1A1A]">
+            {greeting()}, {user?.name?.split(' ')[0]}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">Welcome back, {user?.name}</p>
+          <p className="text-sm text-[#6D7175] mt-0.5">{today}</p>
         </div>
         <button
-          onClick={refresh}
+          onClick={() => { setRefreshing(true); load(); }}
           disabled={refreshing}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition shadow disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[#E1E3E5] bg-white text-sm font-semibold text-[#1A1A1A] hover:bg-[#F6F6F7] transition-colors disabled:opacity-50"
         >
-          <RefreshCw size={16} className={cn(refreshing && 'animate-spin')} />
-          {refreshing ? 'Updating...' : 'Update Data'}
+          <RefreshCw size={14} className={cn(refreshing && 'animate-spin')} />
+          Refresh
         </button>
       </div>
 
-      {/* ═ THE VIBRANT SOLID CARDS ROW ═ */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        
-        {/* Card 1: Revenue */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl shadow-lg shadow-indigo-500/20 p-6 text-white group cursor-pointer hover:-translate-y-1 transition-transform">
-          <DollarSign className="absolute -right-4 -bottom-4 w-32 h-32 text-white/10 group-hover:scale-110 transition-transform duration-500" />
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-               <span className="text-indigo-100 font-medium tracking-wide">Gross Revenue</span>
-               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
-                 <DollarSign size={20} />
-               </div>
-            </div>
-            {loading ? <Skeleton className="h-10 w-32" /> : (
-              <h2 className="text-4xl font-bold tracking-tight">{money(stats?.todayRevenue ?? 0)}</h2>
-            )}
-            <div className="mt-4 flex items-center gap-2 text-sm text-indigo-100 bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-md">
-              <TrendingUp size={14} /> +{stats?.revenueChange || 0}% from yesterday
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Orders */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl shadow-lg shadow-teal-500/20 p-6 text-white group cursor-pointer hover:-translate-y-1 transition-transform">
-          <ShoppingCart className="absolute -right-4 -bottom-4 w-32 h-32 text-white/10 group-hover:scale-110 transition-transform duration-500" />
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-               <span className="text-teal-50 font-medium tracking-wide">Total Sales Count</span>
-               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
-                 <ShoppingCart size={20} />
-               </div>
-            </div>
-            {loading ? <Skeleton className="h-10 w-24" /> : (
-              <h2 className="text-4xl font-bold tracking-tight">{stats?.todaySales ?? 0}</h2>
-            )}
-            <div className="mt-4 flex items-center gap-2 text-sm text-teal-50 bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-md">
-              <TrendingUp size={14} /> +{(stats?.salesChange || 0)}% from yesterday
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Customers */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-fuchsia-500 to-purple-600 rounded-2xl shadow-lg shadow-fuchsia-500/20 p-6 text-white group cursor-pointer hover:-translate-y-1 transition-transform">
-          <Users className="absolute -right-4 -bottom-4 w-32 h-32 text-white/10 group-hover:scale-110 transition-transform duration-500" />
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-               <span className="text-fuchsia-100 font-medium tracking-wide">Active Customers</span>
-               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
-                 <Users size={20} />
-               </div>
-            </div>
-            {loading ? <Skeleton className="h-10 w-24" /> : (
-              <h2 className="text-4xl font-bold tracking-tight">{stats?.totalCustomers ?? 0}</h2>
-            )}
-            <div className="mt-4 flex items-center gap-2 text-sm text-fuchsia-100 bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-md">
-              <Activity size={14} /> Platform reach
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Avg Order Value */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-orange-400 to-amber-500 rounded-2xl shadow-lg shadow-orange-500/20 p-6 text-white group cursor-pointer hover:-translate-y-1 transition-transform">
-          <Activity className="absolute -right-4 -bottom-4 w-32 h-32 text-white/10 group-hover:scale-110 transition-transform duration-500" />
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-               <span className="text-amber-50 font-medium tracking-wide">Avg Order Value</span>
-               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
-                 <Activity size={20} />
-               </div>
-            </div>
-            {loading ? <Skeleton className="h-10 w-24" /> : (
-              <h2 className="text-4xl font-bold tracking-tight">{money(stats?.avgOrderValue ?? 0)}</h2>
-            )}
-            <div className="mt-4 flex items-center gap-2 text-sm text-amber-50 bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-md">
-               <TrendingUp size={14} /> Trailing 24h
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ═ MINI SECONDARY STATS ROW ═ */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-4">
-           <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-500"><ReceiptText size={20} /></div>
-           <div>
-             <div className="text-xs font-bold text-slate-400 uppercase">Tax Collected</div>
-             <div className="text-lg font-bold text-slate-800">{loading ? <SkeletonDark className="h-6 w-16" /> : money(stats?.todayTax ?? 0)}</div>
-           </div>
-         </div>
-         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-4">
-           <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-500"><Zap size={20} /></div>
-           <div>
-             <div className="text-xs font-bold text-slate-400 uppercase">Total Discounts</div>
-             <div className="text-lg font-bold text-slate-800">{loading ? <SkeletonDark className="h-6 w-16" /> : money(stats?.todayDiscount ?? 0)}</div>
-           </div>
-         </div>
-         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-4">
-           <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-500"><Package size={20} /></div>
-           <div>
-             <div className="text-xs font-bold text-slate-400 uppercase">Products Total</div>
-             <div className="text-lg font-bold text-slate-800">{loading ? <SkeletonDark className="h-6 w-16" /> : (stats?.totalProducts ?? 0)}</div>
-           </div>
-         </div>
-      </div>
-
-      {/* ═ CHARTS ROW ═ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-12">
-        {/* Revenue Chart */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <h2 className="text-lg font-bold text-slate-800 mb-6">Revenue Over Time (7 Days)</h2>
-          {loading ? (
-             <div className="h-[200px] flex items-end gap-3 pb-6">
-                {Array.from({ length: 7 }).map((_, i) => (
-                  <SkeletonDark key={i} className="flex-1 w-full rounded-md" style={{ height: `${20 + Math.random() * 80}%` }} />
-                ))}
-            </div>
-          ) : (
-            <div className="h-[220px] w-full">
-              <AreaChart data={stats?.dailyChart ?? []} maxVal={maxChartRevenue} />
-              <div className="flex justify-between items-center mt-3 border-t border-slate-50 pt-3">
-                {stats?.dailyChart?.map((day) => {
-                  const isToday = day.date === new Date().toISOString().split('T')[0];
-                  return (
-                    <div key={day.date} className="text-center w-full">
-                      <p className={cn("text-[11px] font-bold", isToday ? "text-blue-600" : "text-slate-400")}>{shortDay(day.date)}</p>
-                    </div>
-                  );
-                })}
+      {/* ── KPI Cards ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          {
+            label: "Today's revenue",
+            value: loading ? null : fmt(stats?.todayRevenue ?? 0),
+            change: stats?.revenueChange ?? 0,
+            icon: DollarSign,
+            iconBg: '#EAF5F0',
+            iconColor: '#008060',
+          },
+          {
+            label: 'Orders today',
+            value: loading ? null : String(stats?.todaySales ?? 0),
+            change: stats?.salesChange ?? 0,
+            icon: ShoppingBag,
+            iconBg: '#EEF3FB',
+            iconColor: '#2C6ECB',
+          },
+          {
+            label: 'Total customers',
+            value: loading ? null : String(stats?.totalCustomers ?? 0),
+            change: null,
+            icon: Users,
+            iconBg: '#FEF3E2',
+            iconColor: '#B25000',
+          },
+          {
+            label: 'Total products',
+            value: loading ? null : String(stats?.totalProducts ?? 0),
+            change: null,
+            icon: Package,
+            iconBg: '#F2F0FF',
+            iconColor: '#5246E9',
+          },
+        ].map((card) => (
+          <div key={card.label} className="bg-white rounded-xl border border-[#E1E3E5] p-5">
+            <div className="flex items-start justify-between mb-4">
+              <p className="text-xs font-semibold text-[#6D7175] uppercase tracking-wide">{card.label}</p>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: card.iconBg }}>
+                <card.icon size={15} style={{ color: card.iconColor }} />
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Payment Split */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col">
-          <h2 className="text-lg font-bold text-slate-800 mb-6">Payment Overview</h2>
-          {loading ? (
-            <div className="flex-1 flex flex-col justify-center gap-6"><SkeletonDark className="w-40 h-40 rounded-full mx-auto" /></div>
-          ) : !stats?.paymentBreakdown?.length ? (
-            <div className="flex-1 flex items-center justify-center"><span className="text-slate-400 text-sm">No transactions yet</span></div>
-          ) : (
-            <div className="flex-1 flex flex-col justify-between">
-              <div className="flex justify-center my-4">
-                <DonutRing data={stats.paymentBreakdown} />
-              </div>
-              <div className="space-y-4 mt-6">
-                {stats.paymentBreakdown.map((p) => {
-                  const pm = getPM(p.method);
-                  return (
-                    <div key={p.method} className="flex items-center justify-between">
-                       <span className="text-sm font-semibold text-slate-600 flex items-center gap-2">
-                         <pm.icon size={16} className={pm.text} /> {p.method}
-                       </span>
-                       <span className="text-sm font-bold text-slate-900">{money(p.total)}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ═ DATA TABLES ROW ═ */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12 mt-6">
-        {/* Recent Sales List */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-800">Recent Transactions</h2>
-            <Link href="/sales" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700">View All</Link>
-          </div>
-          <div className="divide-y divide-slate-100 flex-1">
-            {loading ? (
-              <div className="p-4 space-y-4"><SkeletonDark className="h-12 w-full" /><SkeletonDark className="h-12 w-full" /></div>
-            ) : !stats?.recentSales?.length ? (
-              <div className="p-8 text-center text-sm text-slate-400">No recent transactions.</div>
+            {card.value === null ? (
+              <Skel w="w-28" h="h-8" />
             ) : (
-              stats.recentSales.slice(0, 5).map((sale) => (
-                <div key={sale.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition">
-                  <div className="flex items-center gap-4">
-                     <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
-                        <ReceiptText size={18} />
-                     </div>
-                     <div>
-                       <p className="text-sm font-bold text-slate-800">{sale.receiptNo}</p>
-                       <p className="text-xs font-medium text-slate-500">{sale.customer?.name || 'Walk-in'} &bull; {new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                     </div>
+              <p className="text-[26px] font-bold text-[#1A1A1A] leading-none">{card.value}</p>
+            )}
+            {card.change !== null && (
+              <div className="flex items-center gap-1 mt-2">
+                {(card.change ?? 0) >= 0 ? (
+                  <TrendingUp size={12} className="text-[#008060]" />
+                ) : (
+                  <TrendingDown size={12} className="text-red-500" />
+                )}
+                <span className={cn(
+                  'text-xs font-semibold',
+                  (card.change ?? 0) >= 0 ? 'text-[#008060]' : 'text-red-500',
+                )}>
+                  {Math.abs(card.change ?? 0)}% vs yesterday
+                </span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* ── Charts row ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+        {/* Revenue chart */}
+        <div className="lg:col-span-2 bg-white rounded-xl border border-[#E1E3E5] p-5">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm font-bold text-[#1A1A1A]">Revenue — last 7 days</p>
+            {!loading && stats && (
+              <span className="text-xs font-semibold text-[#6D7175]">
+                Peak: {fmt(maxRev)}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-[#6D7175] mb-4">Today shown in green</p>
+
+          {loading ? (
+            <div className="flex items-end gap-1 h-16">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="flex-1 animate-pulse bg-[#E1E3E5] rounded-sm"
+                  style={{ height: `${30 + Math.random() * 50}%` }} />
+              ))}
+            </div>
+          ) : (
+            <BarChart data={stats?.dailyChart ?? []} max={maxRev} />
+          )}
+
+          <div className="mt-5 pt-4 border-t border-[#F1F1F1] grid grid-cols-3 gap-4">
+            <div>
+              <p className="text-xs text-[#6D7175]">Tax collected</p>
+              {loading ? <Skel w="w-16" h="h-4" /> : (
+                <p className="text-sm font-bold text-[#1A1A1A] mt-0.5">{fmt(stats?.todayTax ?? 0)}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs text-[#6D7175]">Discounts given</p>
+              {loading ? <Skel w="w-16" h="h-4" /> : (
+                <p className="text-sm font-bold text-[#1A1A1A] mt-0.5">{fmt(stats?.todayDiscount ?? 0)}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs text-[#6D7175]">Avg order value</p>
+              {loading ? <Skel w="w-16" h="h-4" /> : (
+                <p className="text-sm font-bold text-[#1A1A1A] mt-0.5">{fmt(stats?.avgOrderValue ?? 0)}</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Payment breakdown */}
+        <div className="bg-white rounded-xl border border-[#E1E3E5] p-5">
+          <p className="text-sm font-bold text-[#1A1A1A] mb-1">Payment methods</p>
+          <p className="text-xs text-[#6D7175] mb-4">Today's breakdown</p>
+
+          {loading ? (
+            <div className="space-y-3">
+              <Skel w="w-full" h="h-4" />
+              <Skel w="w-4/5" h="h-4" />
+              <Skel w="w-3/5" h="h-4" />
+            </div>
+          ) : !stats?.paymentBreakdown?.length ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <p className="text-sm text-[#6D7175]">No transactions yet today</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-5">
+              <Donut data={stats.paymentBreakdown} />
+              <div className="w-full space-y-3">
+                {stats.paymentBreakdown.map((p) => {
+                  const meta = paymentMeta[p.method] || paymentMeta.CASH;
+                  const total = stats.paymentBreakdown.reduce((s, d) => s + d.total, 0) || 1;
+                  const pct = Math.round((p.total / total) * 100);
+                  return (
+                    <div key={p.method}>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <meta.icon size={13} style={{ color: meta.color }} />
+                          <span className="text-xs font-semibold text-[#1A1A1A]">{meta.label}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-[#6D7175]">{pct}%</span>
+                          <span className="text-xs font-bold text-[#1A1A1A]">{fmt(p.total)}</span>
+                        </div>
+                      </div>
+                      <div className="h-1.5 bg-[#F1F1F1] rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: meta.color }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Bottom tables ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        {/* Recent sales */}
+        <div className="bg-white rounded-xl border border-[#E1E3E5] overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-[#F1F1F1]">
+            <p className="text-sm font-bold text-[#1A1A1A]">Recent orders</p>
+            <Link href="/sales" className="flex items-center gap-1 text-xs font-semibold text-[#008060] hover:underline">
+              View all <ArrowRight size={12} />
+            </Link>
+          </div>
+
+          <div className="divide-y divide-[#F1F1F1]">
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="px-5 py-3.5 flex items-center gap-3">
+                  <Skel w="w-8" h="h-8" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skel w="w-32" h="h-3" />
+                    <Skel w="w-20" h="h-3" />
                   </div>
-                  <div className="text-base font-bold text-slate-900">{money(sale.totalAmount)}</div>
+                  <Skel w="w-16" h="h-4" />
+                </div>
+              ))
+            ) : !stats?.recentSales?.length ? (
+              <div className="px-5 py-10 text-center text-sm text-[#6D7175]">No orders yet today</div>
+            ) : (
+              stats.recentSales.slice(0, 6).map((sale) => (
+                <div key={sale.id} className="px-5 py-3.5 flex items-center gap-3 hover:bg-[#F6F6F7] transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-[#F6F6F7] flex items-center justify-center flex-shrink-0">
+                    <ReceiptText size={14} className="text-[#6D7175]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-semibold text-[#1A1A1A] truncate">{sale.receiptNo}</p>
+                    <p className="text-xs text-[#6D7175]">
+                      {sale.customer?.name || 'Walk-in'} · {sale.cashier?.name}
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-[13px] font-bold text-[#1A1A1A]">{fmt(sale.totalAmount)}</p>
+                    <p className="text-[11px] text-[#6D7175]">
+                      {new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
                 </div>
               ))
             )}
           </div>
         </div>
 
-        {/* Low Stock Alerts */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-800">Low Stock Alerts</h2>
-            <Link href="/inventory" className="text-sm font-semibold text-rose-600 hover:text-rose-700">Manage Inventory</Link>
+        {/* Low stock */}
+        <div className="bg-white rounded-xl border border-[#E1E3E5] overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-[#F1F1F1]">
+            <p className="text-sm font-bold text-[#1A1A1A]">Low stock alerts</p>
+            <Link href="/inventory" className="flex items-center gap-1 text-xs font-semibold text-[#008060] hover:underline">
+              Manage <ArrowRight size={12} />
+            </Link>
           </div>
-          <div className="divide-y divide-slate-100 flex-1">
+
+          <div className="divide-y divide-[#F1F1F1]">
             {loading ? (
-              <div className="p-4 space-y-4"><SkeletonDark className="h-12 w-full" /><SkeletonDark className="h-12 w-full" /></div>
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="px-5 py-3.5 flex items-center gap-3">
+                  <Skel w="w-8" h="h-8" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skel w="w-36" h="h-3" />
+                    <Skel w="w-16" h="h-3" />
+                  </div>
+                  <Skel w="w-12" h="h-5" />
+                </div>
+              ))
             ) : !stats?.lowStockProducts?.length ? (
-              <div className="p-8 text-center text-sm text-slate-400">Inventory levels look healthy!</div>
+              <div className="px-5 py-10 text-center">
+                <p className="text-sm text-[#6D7175]">All stock levels look healthy</p>
+              </div>
             ) : (
-              stats.lowStockProducts.slice(0, 5).map(product => {
+              stats.lowStockProducts.slice(0, 6).map((product) => {
                 const isOut = product.totalStock <= 0;
                 return (
-                  <div key={product.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition">
-                    <div className="flex items-center gap-4">
-                      <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", isOut ? "bg-rose-50 text-rose-500" : "bg-amber-50 text-amber-500")}>
-                        <AlertTriangle size={18} />
-                      </div>
-                      <div className="max-w-[180px] sm:max-w-xs">
-                        <p className="text-sm font-bold text-slate-800 truncate">{product.name}</p>
-                        <p className="text-xs font-medium text-slate-500">{product.sku}</p>
-                      </div>
+                  <div key={product.id} className="px-5 py-3.5 flex items-center gap-3 hover:bg-[#F6F6F7] transition-colors">
+                    <div className={cn(
+                      'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
+                      isOut ? 'bg-red-50' : 'bg-[#FEF3E2]',
+                    )}>
+                      <AlertTriangle size={14} className={isOut ? 'text-red-500' : 'text-[#B25000]'} />
                     </div>
-                    <span className={cn("text-xs font-bold px-3 py-1.5 rounded-lg border", isOut ? "bg-rose-50 text-rose-700 border-rose-100" : "bg-amber-50 text-amber-700 border-amber-100")}>
-                      {isOut ? 'Depleted' : `${product.totalStock} left`}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold text-[#1A1A1A] truncate">{product.name}</p>
+                      <p className="text-xs text-[#6D7175]">{product.sku}{product.category ? ` · ${product.category}` : ''}</p>
+                    </div>
+                    <span className={cn(
+                      'text-xs font-bold px-2.5 py-1 rounded-lg flex-shrink-0',
+                      isOut
+                        ? 'bg-red-50 text-red-600'
+                        : 'bg-[#FEF3E2] text-[#B25000]',
+                    )}>
+                      {isOut ? 'Out' : `${product.totalStock} left`}
                     </span>
                   </div>
                 );

@@ -16,10 +16,9 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
 
   return (
-    <div>
-      {/* Tab navigation */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-6 print:hidden">
-        <div className="flex gap-0 border-b border-gray-200">
+    <div style={{ fontFamily: "'Poppins', sans-serif" }}>
+      <div className="bg-white rounded-xl border border-[#E1E3E5] mb-6 print:hidden">
+        <div className="flex gap-0 border-b border-[#E1E3E5]">
           {inventoryTabs.map((tab) => {
             const active = pathname === tab.href;
             return (
@@ -29,8 +28,8 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
                 className={cn(
                   'flex items-center gap-2 px-5 py-3.5 text-sm font-medium border-b-2 -mb-px transition',
                   active
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                    ? 'border-[#008060] text-[#008060]'
+                    : 'border-transparent text-[#6D7175] hover:text-[#202223] hover:border-[#C9CCCF]',
                 )}
               >
                 <tab.icon size={16} />

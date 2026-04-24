@@ -1,260 +1,149 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Tag, Plus, Search, Edit2, Loader2, Play, Pause, Calendar, Scissors } from 'lucide-react';
-import api from '@/lib/api';
 import { toast } from 'sonner';
+import { Tag, Plus, Search, Edit3, Loader2, X } from 'lucide-react';
+import api from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 
-interface DiscountRule {
-  id: number;
-  code: string | null;
-  type: 'FLAT' | 'PERCENTAGE';
-  value: number;
-  minOrderAmt: number | null;
-  maxUses: number | null;
-  usedCount: number;
-  expiresAt: string | null;
-  isActive: boolean;
-}
+interface DiscountRule { id: number; code: string | null; type: 'FLAT' | 'PERCENTAGE'; value: number; minOrderAmt: number | null; maxUses: number | null; usedCount: number; expiresAt: string | null; isActive: boolean; }
+const inp = 'w-full border border-[#C9CCCF] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#008060]/30 focus:border-[#008060] transition-colors text-[#202223]';
 
 export default function DiscountRulesPage() {
   const { user } = useAuthStore();
   const [rules, setRules] = useState<DiscountRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
-  
-  const [formData, setFormData] = useState({
-    code: '',
-    type: 'PERCENTAGE',
-    value: '',
-    minOrderAmt: '',
-    maxUses: '',
-    expiresAt: ''
-  });
+  const [form, setForm] = useState({ code: '', type: 'PERCENTAGE', value: '', minOrderAmt: '', maxUses: '', expiresAt: '' });
 
-  const loadRules = async () => {
-    try {
-      setLoading(true);
-      const { data } = await api.get('/discount-rules');
-      setRules(data);
-    } catch {
-      toast.error('Failed to load discount rules');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const load = () => { setLoading(true); api.get('/discount-rules').then(({ data }) => setRules(data)).catch(() => toast.error('Failed to load')).finally(() => setLoading(false)); };
+  useEffect(() => { load(); }, []);
 
-  useEffect(() => { loadRules(); }, []);
+  const filtered = rules.filter((r) => !search || (r.code && r.code.toLowerCase().includes(search.toLowerCase())) || r.type.toLowerCase().includes(search.toLowerCase()));
 
-  const handleOpenModal = (rule?: DiscountRule) => {
-    if (rule) {
-      setEditId(rule.id);
-      setFormData({
-        code: rule.code || '',
-        type: rule.type,
-        value: rule.value.toString(),
-        minOrderAmt: rule.minOrderAmt ? rule.minOrderAmt.toString() : '',
-        maxUses: rule.maxUses ? rule.maxUses.toString() : '',
-        expiresAt: rule.expiresAt ? new Date(rule.expiresAt).toISOString().slice(0, 16) : ''
-      });
-    } else {
-      setEditId(null);
-      setFormData({ code: '', type: 'PERCENTAGE', value: '', minOrderAmt: '', maxUses: '', expiresAt: '' });
-    }
-    setIsModalOpen(true);
+  const openCreate = () => { setEditId(null); setForm({ code: '', type: 'PERCENTAGE', value: '', minOrderAmt: '', maxUses: '', expiresAt: '' }); setShowModal(true); };
+  const openEdit = (r: DiscountRule) => {
+    setEditId(r.id);
+    setForm({ code: r.code || '', type: r.type, value: String(r.value), minOrderAmt: r.minOrderAmt ? String(r.minOrderAmt) : '', maxUses: r.maxUses ? String(r.maxUses) : '', expiresAt: r.expiresAt ? new Date(r.expiresAt).toISOString().slice(0, 16) : '' });
+    setShowModal(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.value) return toast.error('Discount value is required');
-    
+    if (!form.value) { toast.error('Value required'); return; }
     setSaving(true);
     try {
-      const payload = {
-        code: formData.code.toUpperCase() || null,
-        type: formData.type,
-        value: Number(formData.value),
-        minOrderAmt: formData.minOrderAmt ? Number(formData.minOrderAmt) : null,
-        maxUses: formData.maxUses ? Number(formData.maxUses) : null,
-        expiresAt: formData.expiresAt ? new Date(formData.expiresAt).toISOString() : null,
-      };
-
-      if (editId) {
-        await api.patch(`/discount-rules/${editId}`, payload);
-        toast.success('Discount rule updated');
-      } else {
-        await api.post('/discount-rules', payload);
-        toast.success('Discount rule created');
-      }
-      setIsModalOpen(false);
-      loadRules();
-    } catch {
-      toast.error('Failed to save discount rule');
-    } finally {
-      setSaving(false);
-    }
+      const p = { code: form.code.toUpperCase() || null, type: form.type, value: Number(form.value), minOrderAmt: form.minOrderAmt ? Number(form.minOrderAmt) : null, maxUses: form.maxUses ? Number(form.maxUses) : null, expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : null };
+      editId ? await api.patch(`/discount-rules/${editId}`, p) : await api.post('/discount-rules', p);
+      toast.success(editId ? 'Updated' : 'Created'); setShowModal(false); load();
+    } catch { toast.error('Failed to save'); } finally { setSaving(false); }
   };
 
   const toggleStatus = async (id: number, current: boolean) => {
-    try {
-      await api.patch(`/discount-rules/${id}`, { isActive: !current });
-      toast.success(`Rule ${!current ? 'activated' : 'paused'}`);
-      loadRules();
-    } catch {
-      toast.error('Failed to update status');
-    }
+    try { await api.patch(`/discount-rules/${id}`, { isActive: !current }); toast.success(current ? 'Paused' : 'Activated'); load(); }
+    catch { toast.error('Failed'); }
   };
 
-  const filteredRules = rules.filter(r => 
-    (r.code && r.code.toLowerCase().includes(search.toLowerCase())) || 
-    r.type.toLowerCase().includes(search.toLowerCase())
-  );
-
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-12">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-pink-50 text-pink-600 rounded-xl flex items-center justify-center">
-            <Tag size={24} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Discount Rules</h1>
-            <p className="text-sm text-slate-500 font-medium">Manage promotions, coupons, and flat discounts</p>
-          </div>
+    <div className="p-6 space-y-5" style={{ fontFamily: "'Poppins', sans-serif" }}>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-[#202223]">Discounts</h1>
+          <p className="text-sm text-[#6D7175] mt-0.5">Manage promo codes and discount rules</p>
         </div>
         {user?.role !== 'CASHIER' && (
-          <button onClick={() => handleOpenModal()} className="flex items-center gap-2 bg-pink-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-pink-700 transition shadow-sm shadow-pink-600/20">
-            <Plus size={18} /> New Promo Code
+          <button onClick={openCreate} className="flex items-center gap-2 bg-[#008060] hover:bg-[#006E52] text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+            <Plus size={16} /> Add discount
           </button>
         )}
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
-        <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-          <div className="relative w-full max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input type="text" placeholder="Search codes..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 text-sm outline-none" />
+      <div className="bg-white rounded-xl border border-[#E1E3E5] overflow-hidden">
+        <div className="p-4 border-b border-[#E1E3E5]">
+          <div className="relative max-w-sm">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8C9196]" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search discount codes..."
+              className="w-full pl-9 pr-3 py-2 border border-[#C9CCCF] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#008060]/30 focus:border-[#008060] bg-[#F6F6F7]" />
           </div>
         </div>
-
-        <div className="flex-1 overflow-x-auto">
-          {loading ? (
-             <div className="flex flex-col items-center justify-center h-[400px] text-slate-400 space-y-4">
-                <Loader2 size={32} className="animate-spin text-pink-600" />
-                <p className="font-medium">Loading rules...</p>
-             </div>
-          ) : filteredRules.length === 0 ? (
-             <div className="flex flex-col items-center justify-center h-[400px] text-slate-400 space-y-4">
-                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center"><Tag size={24} className="text-slate-300" /></div>
-                <p className="font-medium text-slate-500">No discount rules found.</p>
-             </div>
-          ) : (
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-white border-b border-slate-100 text-xs uppercase text-slate-500 font-semibold">
-                  <th className="p-4 pl-6">Promo Code</th>
-                  <th className="p-4">Discount Value</th>
-                  <th className="p-4">Conditions</th>
-                  <th className="p-4">Usage</th>
-                  <th className="p-4">Status</th>
-                  {user?.role !== 'CASHIER' && <th className="p-4 text-right pr-6">Options</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {filteredRules.map((rule) => {
-                  const isExpired = rule.expiresAt && new Date(rule.expiresAt) < new Date();
-                  const isExhausted = rule.maxUses && rule.usedCount >= rule.maxUses;
-                  const canUse = rule.isActive && !isExpired && !isExhausted;
-
-                  return (
-                    <tr key={rule.id} className="hover:bg-slate-50/80 transition group">
-                      <td className="p-4 pl-6">
-                        <div className="font-bold text-slate-900 text-sm mb-1">{rule.code || 'Automatic Discount'}</div>
-                        {rule.expiresAt && <div className="text-xs flex items-center gap-1 text-slate-500"><Calendar size={12} /> {new Date(rule.expiresAt).toLocaleDateString()}</div>}
-                      </td>
-                      <td className="p-4">
-                        <span className="font-bold text-pink-600 bg-pink-50 px-3 py-1 rounded-lg text-sm border border-pink-100">
-                           {rule.type === 'PERCENTAGE' ? `${rule.value}% OFF` : `$${rule.value} OFF`}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        {rule.minOrderAmt ? (
-                           <div className="text-xs text-slate-600"><span className="font-semibold">Min order:</span> ${rule.minOrderAmt}</div>
-                        ) : <span className="text-xs text-slate-400 italic">No minimum</span>}
-                      </td>
-                      <td className="p-4">
-                        <div className="text-sm font-semibold text-slate-700">{rule.usedCount} <span className="text-slate-400 font-normal">used</span></div>
-                        {rule.maxUses && <div className="text-xs text-slate-500">of {rule.maxUses} uses limit</div>}
-                      </td>
-                      <td className="p-4">
-                        <button onClick={() => toggleStatus(rule.id, rule.isActive)} disabled={user?.role === 'CASHIER'} className={cn("px-2.5 py-1 text-xs font-bold rounded-lg border focus:outline-none transition flex items-center gap-1", canUse ? "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100", user?.role === 'CASHIER' && "pointer-events-none opacity-80")}>
-                          {canUse ? <Play size={10} /> : <Pause size={10} />}
-                          {canUse ? 'Active' : isExpired ? 'Expired' : isExhausted ? 'Exhausted' : 'Paused'}
-                        </button>
-                      </td>
-                      {user?.role !== 'CASHIER' && (
-                        <td className="p-4 text-right pr-6">
-                          <button onClick={() => handleOpenModal(rule)} className="p-2 text-slate-400 hover:text-pink-600 hover:bg-pink-50 rounded-lg opacity-0 group-hover:opacity-100 transition"><Edit2 size={16} /></button>
-                        </td>
-                      )}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          )}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-[#F6F6F7] border-b border-[#E1E3E5]">
+                {['Code', 'Discount', 'Min order', 'Usage', 'Expires', 'Status', ''].map((h) => (
+                  <th key={h} className="px-5 py-3 text-xs font-semibold text-[#6D7175] uppercase tracking-wide text-left">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E1E3E5]">
+              {loading ? Array.from({ length: 4 }).map((_, i) => (
+                <tr key={i}>{Array.from({ length: 7 }).map((_, j) => <td key={j} className="px-5 py-4"><div className="h-4 bg-[#F6F6F7] rounded animate-pulse" /></td>)}</tr>
+              )) : filtered.length === 0 ? (
+                <tr><td colSpan={7} className="text-center py-16"><Tag size={32} className="text-[#C4CDD5] mx-auto mb-3" /><p className="text-sm font-medium text-[#6D7175]">No discount rules</p></td></tr>
+              ) : filtered.map((r) => {
+                const expired = r.expiresAt && new Date(r.expiresAt) < new Date();
+                const exhausted = r.maxUses && r.usedCount >= r.maxUses;
+                const active = r.isActive && !expired && !exhausted;
+                return (
+                  <tr key={r.id} className="hover:bg-[#F6F6F7] transition-colors group">
+                    <td className="px-5 py-4">
+                      <span className="text-sm font-bold text-[#202223] font-mono bg-[#F6F6F7] border border-[#E1E3E5] px-2 py-0.5 rounded">
+                        {r.code || 'AUTO'}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4"><span className="bg-[#EAF5F0] text-[#008060] text-sm font-bold px-3 py-1 rounded-lg">{r.type === 'PERCENTAGE' ? `${r.value}%` : `$${r.value}`} OFF</span></td>
+                    <td className="px-5 py-4 text-sm text-[#6D7175]">{r.minOrderAmt ? `$${r.minOrderAmt}` : '—'}</td>
+                    <td className="px-5 py-4 text-sm text-[#6D7175]">{r.usedCount}{r.maxUses ? ` / ${r.maxUses}` : ''}</td>
+                    <td className="px-5 py-4 text-sm text-[#6D7175]">{r.expiresAt ? new Date(r.expiresAt).toLocaleDateString() : '—'}</td>
+                    <td className="px-5 py-4">
+                      <button onClick={() => toggleStatus(r.id, r.isActive)} disabled={user?.role === 'CASHIER'}
+                        className={cn('px-2.5 py-1 rounded-full text-xs font-semibold transition-colors', active ? 'bg-[#EAF5F0] text-[#008060] hover:bg-[#D1EDE7]' : 'bg-[#F6F6F7] text-[#6D7175] hover:bg-[#E1E3E5]', user?.role === 'CASHIER' && 'pointer-events-none')}>
+                        {active ? 'Active' : expired ? 'Expired' : exhausted ? 'Exhausted' : 'Paused'}
+                      </button>
+                    </td>
+                    <td className="px-5 py-4">
+                      {user?.role !== 'CASHIER' && <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-[#EEF3FB] text-[#8C9196] hover:text-[#2C6ECB] transition-all"><Edit3 size={14} /></button>}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm animate-in fade-in zoom-in-95">
-             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-               <h3 className="text-lg font-bold">{editId ? 'Edit Rule' : 'New Rule'}</h3>
-               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><Plus size={24} className="rotate-45" /></button>
-             </div>
-             
-             <form onSubmit={handleSave} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Promo Code (Leave blank for automatic)</label>
-                  <input type="text" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none uppercase text-sm" placeholder="SUMMER50" />
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl border border-[#E1E3E5] shadow-2xl w-full max-w-md mx-4">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#E1E3E5]">
+              <h3 className="font-semibold text-[#202223]">{editId ? 'Edit discount' : 'Add discount'}</h3>
+              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg text-[#8C9196] hover:bg-[#F6F6F7] transition-colors"><X size={18} /></button>
+            </div>
+            <form onSubmit={handleSave} className="p-6 space-y-4">
+              <div><label className="block text-xs font-semibold text-[#6D7175] mb-1.5 uppercase tracking-wide">Promo code (blank = automatic)</label><input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="SUMMER20" className={cn(inp, 'uppercase')} /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="block text-xs font-semibold text-[#6D7175] mb-1.5 uppercase tracking-wide">Type</label>
+                  <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className={inp}>
+                    <option value="PERCENTAGE">Percentage (%)</option>
+                    <option value="FLAT">Flat ($)</option>
+                  </select>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Discount Type</label>
-                    <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as 'FLAT' | 'PERCENTAGE'})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none">
-                       <option value="PERCENTAGE">Percentage (%)</option>
-                       <option value="FLAT">Flat Rate ($)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Value *</label>
-                    <input required type="number" step="0.01" value={formData.value} onChange={e => setFormData({...formData, value: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-pink-500 outline-none text-sm" placeholder="20" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Minimum Order Amount (Optional)</label>
-                  <input type="number" step="0.01" value={formData.minOrderAmt} onChange={e => setFormData({...formData, minOrderAmt: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" placeholder="100.00" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Max Usages (Optional)</label>
-                  <input type="number" value={formData.maxUses} onChange={e => setFormData({...formData, maxUses: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" placeholder="e.g. 100 first customers" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Expiration Date (Optional)</label>
-                  <input type="datetime-local" value={formData.expiresAt} onChange={e => setFormData({...formData, expiresAt: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" />
-                </div>
-                <div className="pt-4 flex justify-end gap-3">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-sm font-semibold hover:bg-slate-100 rounded-xl">Cancel</button>
-                  <button type="submit" disabled={saving} className="px-5 py-2 text-sm font-semibold text-white bg-pink-600 hover:bg-pink-700 rounded-xl">Save</button>
-                </div>
-             </form>
+                <div><label className="block text-xs font-semibold text-[#6D7175] mb-1.5 uppercase tracking-wide">Value *</label><input required type="number" step="0.01" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} placeholder="20" className={inp} /></div>
+              </div>
+              <div><label className="block text-xs font-semibold text-[#6D7175] mb-1.5 uppercase tracking-wide">Min order amount</label><input type="number" step="0.01" value={form.minOrderAmt} onChange={(e) => setForm({ ...form, minOrderAmt: e.target.value })} placeholder="100.00" className={inp} /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="block text-xs font-semibold text-[#6D7175] mb-1.5 uppercase tracking-wide">Max uses</label><input type="number" value={form.maxUses} onChange={(e) => setForm({ ...form, maxUses: e.target.value })} placeholder="Unlimited" className={inp} /></div>
+                <div><label className="block text-xs font-semibold text-[#6D7175] mb-1.5 uppercase tracking-wide">Expires at</label><input type="datetime-local" value={form.expiresAt} onChange={(e) => setForm({ ...form, expiresAt: e.target.value })} className={inp} /></div>
+              </div>
+              <div className="pt-2 flex justify-end gap-3">
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm font-semibold text-[#6D7175] border border-[#C9CCCF] rounded-lg bg-white hover:bg-[#F6F6F7] transition-colors">Cancel</button>
+                <button type="submit" disabled={saving} className="flex items-center gap-2 bg-[#008060] hover:bg-[#006E52] text-white px-5 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 transition-colors">{saving && <Loader2 size={14} className="animate-spin" />}Save</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
