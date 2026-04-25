@@ -161,16 +161,16 @@ export default function CashierPage() {
   };
 
   return (
-    <div className="h-screen flex overflow-hidden" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: '#F6F6F7' }}>
+    <div className="h-screen flex overflow-hidden" style={{ fontFamily: "'Poppins', sans-serif", background: '#F6F6F7' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .product-card { transition: all 0.15s ease; }
-        .product-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .product-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .product-card:active { transform: translateY(0); }
         .cat-tab { position: relative; transition: color 0.15s; }
-        .cat-tab::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: #1C1C1C; transform: scaleX(0); transition: transform 0.2s; }
+        .cat-tab::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: #008060; transform: scaleX(0); transition: transform 0.2s; }
         .cat-tab.active::after { transform: scaleX(1); }
       `}</style>
 
@@ -178,30 +178,30 @@ export default function CashierPage() {
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Top bar */}
-        <div className="h-14 bg-white border-b border-gray-200 flex items-center px-5 gap-4 flex-shrink-0">
+        <div className="h-14 bg-white border-b border-[#E1E3E5] flex items-center px-5 gap-4 flex-shrink-0">
           <button
             onClick={() => router.push('/overview')}
-            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium"
+            className="flex items-center gap-1.5 text-sm text-[#6D7175] hover:text-[#1A1A1A] transition-colors font-medium"
           >
             <ArrowLeft size={16} />
             Back
           </button>
-          <div className="w-px h-5 bg-gray-200" />
-          <span className="text-sm font-semibold text-gray-900">{company?.name || 'POS'}</span>
+          <div className="w-px h-5 bg-[#E1E3E5]" />
+          <span className="text-sm font-semibold text-[#1A1A1A]">{company?.name || 'POS'}</span>
           <div className="flex-1" />
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center text-white text-xs font-bold">
+          <div className="flex items-center gap-2 text-sm">
+            <div className="w-7 h-7 rounded-full bg-[#008060] flex items-center justify-center text-white text-xs font-bold">
               {user?.name?.charAt(0).toUpperCase()}
             </div>
-            <span className="font-medium text-gray-700">{user?.name}</span>
-            {user?.store?.name && <span className="text-gray-400">· {user.store.name}</span>}
+            <span className="font-medium text-[#1A1A1A]">{user?.name}</span>
+            {user?.store?.name && <span className="text-[#6D7175]">· {user.store.name}</span>}
           </div>
         </div>
 
         {/* Search bar */}
-        <div className="px-5 py-3 bg-white border-b border-gray-200">
+        <div className="px-5 py-3 bg-white border-b border-[#E1E3E5]">
           <div className="relative">
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6D7175]" />
             <input
               autoFocus
               value={search}
@@ -215,19 +215,19 @@ export default function CashierPage() {
                 }
               }}
               placeholder="Search products or scan barcode..."
-              className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder-gray-400"
+              className="w-full pl-9 pr-4 py-2.5 bg-[#F6F6F7] border border-[#C9CCCF] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#008060]/30 focus:border-[#008060] placeholder-[#8C9196]"
             />
           </div>
         </div>
 
         {/* Category tabs */}
-        <div className="bg-white border-b border-gray-200 px-5">
+        <div className="bg-white border-b border-[#E1E3E5] px-5">
           <div className="flex gap-6 overflow-x-auto scrollbar-hide">
             {['All', ...categories].map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={cn('cat-tab py-3 text-sm font-semibold whitespace-nowrap', activeCategory === cat ? 'active text-gray-900' : 'text-gray-400 hover:text-gray-600')}
+                className={cn('cat-tab py-3 text-sm font-semibold whitespace-nowrap transition-colors', activeCategory === cat ? 'active text-[#008060]' : 'text-[#6D7175] hover:text-[#1A1A1A]')}
               >
                 {cat}
               </button>
@@ -239,13 +239,13 @@ export default function CashierPage() {
         <div className="flex-1 overflow-y-auto scrollbar-hide p-5">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-64 gap-3">
-              <Loader2 size={24} className="animate-spin text-gray-400" />
-              <p className="text-sm text-gray-400 font-medium">Loading products...</p>
+              <Loader2 size={24} className="animate-spin text-[#6D7175]" />
+              <p className="text-sm text-[#6D7175] font-medium">Loading products...</p>
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 gap-2">
-              <Package size={32} className="text-gray-300" />
-              <p className="text-sm text-gray-400 font-medium">No products found</p>
+              <Package size={32} className="text-[#C9CCCF]" />
+              <p className="text-sm text-[#6D7175] font-medium">No products found</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
@@ -260,35 +260,30 @@ export default function CashierPage() {
                     disabled={outOfStock}
                     className={cn(
                       'product-card bg-white rounded-xl p-3 text-left relative border-2 overflow-hidden',
-                      inCart ? 'border-gray-900' : 'border-transparent',
+                      inCart ? 'border-[#008060]' : 'border-[#E1E3E5]',
                       outOfStock ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
                     )}
-                    style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
                   >
-                    {/* In-cart qty badge */}
                     {inCart && (
-                      <div className="absolute top-2 right-2 w-6 h-6 bg-gray-900 text-white rounded-full text-xs flex items-center justify-center font-bold z-10">
+                      <div className="absolute top-2 right-2 w-6 h-6 bg-[#008060] text-white rounded-full text-xs flex items-center justify-center font-bold z-10">
                         {inCart.quantity}
                       </div>
                     )}
 
-                    {/* Product image / placeholder */}
-                    <div className="w-full aspect-square rounded-lg mb-3 flex items-center justify-center overflow-hidden"
-                      style={{ background: '#F3F3F3' }}>
+                    <div className="w-full aspect-square rounded-lg mb-3 flex items-center justify-center overflow-hidden bg-[#F6F6F7]">
                       {product.imageUrl ? (
                         <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain" />
                       ) : (
-                        <div className="flex flex-col items-center gap-1 opacity-30">
-                          <Package size={22} className="text-gray-500" />
-                        </div>
+                        <Package size={22} className="text-[#C9CCCF]" />
                       )}
                     </div>
 
-                    <p className="text-xs font-semibold text-gray-900 leading-tight line-clamp-2 mb-1">{product.name}</p>
+                    <p className="text-xs font-semibold text-[#1A1A1A] leading-tight line-clamp-2 mb-1">{product.name}</p>
                     <div className="flex items-center justify-between mt-auto pt-1">
-                      <p className="text-sm font-bold text-gray-900">${Number(product.basePrice).toFixed(2)}</p>
-                      <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full',
-                        stock <= 5 ? 'bg-red-50 text-red-500' : 'bg-gray-100 text-gray-400'
+                      <p className="text-sm font-bold text-[#1A1A1A]">${Number(product.basePrice).toFixed(2)}</p>
+                      <span className={cn(
+                        'text-[10px] font-semibold px-1.5 py-0.5 rounded-full',
+                        stock <= 5 ? 'bg-red-50 text-red-500' : 'bg-[#F6F6F7] text-[#6D7175]',
                       )}>
                         {stock}
                       </span>
@@ -302,16 +297,16 @@ export default function CashierPage() {
       </div>
 
       {/* ── RIGHT: Cart / Checkout Panel ── */}
-      <div className="w-[380px] flex-shrink-0 flex flex-col" style={{ background: '#1C1C1C', color: '#fff' }}>
+      <div className="w-[380px] flex-shrink-0 bg-white border-l border-[#E1E3E5] flex flex-col">
 
         {!showCheckout ? (
           <>
             {/* Cart header */}
-            <div className="px-5 pt-5 pb-4 border-b border-white/10">
+            <div className="px-5 pt-5 pb-4 border-b border-[#E1E3E5]">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-bold tracking-tight">Order</h2>
+                <h2 className="text-base font-bold text-[#1A1A1A]">Order</h2>
                 {totalItems > 0 && (
-                  <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: '#333', color: '#aaa' }}>
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#EAF5F0] text-[#008060]">
                     {totalItems} {totalItems === 1 ? 'item' : 'items'}
                   </span>
                 )}
@@ -321,26 +316,25 @@ export default function CashierPage() {
               <div className="relative">
                 <button
                   onClick={() => setShowCustomerDropdown(!showCustomerDropdown)}
-                  className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors"
-                  style={{ background: '#2A2A2A', color: selectedCustomer ? '#fff' : '#888' }}
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-sm font-medium border border-[#C9CCCF] bg-[#F6F6F7] hover:bg-[#EFEFEF] transition-colors"
                 >
-                  <UserCircle size={15} className={selectedCustomer ? 'text-white' : 'text-gray-500'} />
-                  <span className="flex-1 text-left truncate">
+                  <UserCircle size={15} className="text-[#6D7175]" />
+                  <span className={cn('flex-1 text-left truncate', selectedCustomer ? 'text-[#1A1A1A]' : 'text-[#8C9196]')}>
                     {selectedCustomer ? selectedCustomer.name : 'Walk-in Customer'}
                   </span>
                   {selectedCustomer ? (
-                    <X size={14} className="text-gray-400 hover:text-white"
+                    <X size={14} className="text-[#6D7175] hover:text-[#D72C0D]"
                       onClick={(e) => { e.stopPropagation(); setSelectedCustomer(null); setShowCustomerDropdown(false); }} />
                   ) : (
-                    <ChevronDown size={14} className="text-gray-500" />
+                    <ChevronDown size={14} className="text-[#6D7175]" />
                   )}
                 </button>
 
                 {showCustomerDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-1 rounded-lg overflow-hidden z-50 shadow-2xl border border-white/10"
-                    style={{ background: '#2A2A2A', maxHeight: '180px', overflowY: 'auto' }}>
+                  <div className="absolute top-full left-0 right-0 mt-1 rounded-lg overflow-hidden z-50 shadow-lg border border-[#E1E3E5] bg-white"
+                    style={{ maxHeight: '180px', overflowY: 'auto' }}>
                     <button
-                      className="w-full text-left px-3.5 py-2.5 text-sm text-gray-400 hover:bg-white/5 transition-colors"
+                      className="w-full text-left px-3.5 py-2.5 text-sm text-[#6D7175] hover:bg-[#F6F6F7] transition-colors"
                       onClick={() => { setSelectedCustomer(null); setShowCustomerDropdown(false); }}
                     >
                       Walk-in Customer
@@ -348,11 +342,11 @@ export default function CashierPage() {
                     {customers.map((c) => (
                       <button
                         key={c.id}
-                        className="w-full text-left px-3.5 py-2.5 text-sm text-white hover:bg-white/5 transition-colors"
+                        className="w-full text-left px-3.5 py-2.5 text-sm hover:bg-[#F6F6F7] transition-colors"
                         onClick={() => { setSelectedCustomer(c); setShowCustomerDropdown(false); }}
                       >
-                        <span className="block font-medium">{c.name}</span>
-                        {c.phone && <span className="text-xs text-gray-400">{c.phone}</span>}
+                        <span className="block font-semibold text-[#1A1A1A]">{c.name}</span>
+                        {c.phone && <span className="text-xs text-[#6D7175]">{c.phone}</span>}
                       </button>
                     ))}
                   </div>
@@ -364,46 +358,44 @@ export default function CashierPage() {
             <div className="flex-1 overflow-y-auto scrollbar-hide px-5 py-3 space-y-1">
               {cart.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full gap-3 py-16">
-                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: '#2A2A2A' }}>
-                    <Package size={24} className="text-gray-600" />
+                  <div className="w-16 h-16 rounded-2xl bg-[#F6F6F7] flex items-center justify-center">
+                    <Package size={24} className="text-[#C9CCCF]" />
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-semibold text-gray-400">Cart is empty</p>
-                    <p className="text-xs text-gray-600 mt-1">Tap a product to add it</p>
+                    <p className="text-sm font-semibold text-[#6D7175]">Cart is empty</p>
+                    <p className="text-xs text-[#8C9196] mt-1">Tap a product to add it</p>
                   </div>
                 </div>
               ) : (
                 cart.map((item) => (
                   <div key={item.productId}
-                    className="flex items-center gap-3 py-3 border-b border-white/5 group">
+                    className="flex items-center gap-3 py-3 border-b border-[#F1F1F1] group">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white truncate">{item.name}</p>
-                      <p className="text-xs mt-0.5" style={{ color: '#888' }}>${item.price.toFixed(2)} each</p>
+                      <p className="text-sm font-semibold text-[#1A1A1A] truncate">{item.name}</p>
+                      <p className="text-xs text-[#6D7175] mt-0.5">${item.price.toFixed(2)} each</p>
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button
                         onClick={() => updateQty(item.productId, -1)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
-                        style={{ background: '#2A2A2A' }}
+                        className="w-7 h-7 rounded-lg border border-[#E1E3E5] bg-[#F6F6F7] flex items-center justify-center hover:bg-[#EFEFEF] transition-colors"
                       >
-                        <Minus size={11} className="text-gray-300" />
+                        <Minus size={11} className="text-[#6D7175]" />
                       </button>
-                      <span className="w-6 text-center text-sm font-bold text-white">{item.quantity}</span>
+                      <span className="w-6 text-center text-sm font-bold text-[#1A1A1A]">{item.quantity}</span>
                       <button
                         onClick={() => updateQty(item.productId, 1)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
-                        style={{ background: '#2A2A2A' }}
+                        className="w-7 h-7 rounded-lg border border-[#E1E3E5] bg-[#F6F6F7] flex items-center justify-center hover:bg-[#EFEFEF] transition-colors"
                       >
-                        <Plus size={11} className="text-gray-300" />
+                        <Plus size={11} className="text-[#6D7175]" />
                       </button>
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <p className="text-sm font-bold text-white w-14 text-right">${(item.price * item.quantity).toFixed(2)}</p>
+                      <p className="text-sm font-bold text-[#1A1A1A] w-14 text-right">${(item.price * item.quantity).toFixed(2)}</p>
                       <button
                         onClick={() => removeItem(item.productId)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-600 hover:text-red-400"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-[#C9CCCF] hover:text-[#D72C0D]"
                       >
                         <Trash2 size={13} />
                       </button>
@@ -414,27 +406,27 @@ export default function CashierPage() {
             </div>
 
             {/* Cart footer */}
-            <div className="px-5 pb-5 pt-4 border-t border-white/10">
+            <div className="px-5 pb-5 pt-4 border-t border-[#E1E3E5]">
               <div className="space-y-2 mb-4">
-                <div className="flex justify-between text-sm" style={{ color: '#888' }}>
-                  <span>Subtotal</span>
-                  <span className="text-white font-medium">${subtotal.toFixed(2)}</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#6D7175]">Subtotal</span>
+                  <span className="font-semibold text-[#1A1A1A]">${subtotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-sm" style={{ color: '#888' }}>
-                  <span>Tax</span>
-                  <span className="text-white font-medium">${tax.toFixed(2)}</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#6D7175]">Tax</span>
+                  <span className="font-semibold text-[#1A1A1A]">${tax.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-lg font-bold pt-2 border-t border-white/10">
-                  <span className="text-white">Total</span>
-                  <span className="text-white">${total.toFixed(2)}</span>
+                <div className="flex justify-between text-lg font-bold pt-2 border-t border-[#E1E3E5]">
+                  <span className="text-[#1A1A1A]">Total</span>
+                  <span className="text-[#1A1A1A]">${total.toFixed(2)}</span>
                 </div>
               </div>
 
               <button
                 onClick={() => setShowCheckout(true)}
                 disabled={cart.length === 0}
-                className="w-full py-4 rounded-xl text-white font-bold text-base transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-90 active:scale-[0.99]"
-                style={{ background: cart.length > 0 ? '#008060' : '#333' }}
+                className="w-full py-3.5 rounded-xl text-white font-bold text-base transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 active:scale-[0.99]"
+                style={{ background: cart.length > 0 ? '#008060' : '#C9CCCF' }}
               >
                 {cart.length === 0 ? 'Add items to charge' : `Charge $${total.toFixed(2)}`}
               </button>
@@ -443,49 +435,48 @@ export default function CashierPage() {
         ) : (
           /* ── Checkout Panel ── */
           <>
-            <div className="px-5 pt-5 pb-4 border-b border-white/10 flex items-center gap-3">
+            <div className="px-5 pt-5 pb-4 border-b border-[#E1E3E5] flex items-center gap-3">
               <button
                 onClick={() => setShowCheckout(false)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
-                style={{ background: '#2A2A2A' }}
+                className="w-8 h-8 rounded-lg border border-[#E1E3E5] bg-[#F6F6F7] flex items-center justify-center hover:bg-[#EFEFEF] transition-colors"
               >
-                <ArrowLeft size={16} className="text-white" />
+                <ArrowLeft size={16} className="text-[#6D7175]" />
               </button>
-              <h2 className="text-base font-bold">Checkout</h2>
+              <h2 className="text-base font-bold text-[#1A1A1A]">Checkout</h2>
             </div>
 
             <div className="flex-1 overflow-y-auto scrollbar-hide px-5 py-4 space-y-5">
               {/* Order summary */}
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#666' }}>Order Summary</p>
-                <div className="space-y-2.5 rounded-xl p-4" style={{ background: '#2A2A2A' }}>
+                <p className="text-xs font-semibold text-[#6D7175] uppercase tracking-widest mb-3">Order Summary</p>
+                <div className="rounded-xl border border-[#E1E3E5] bg-[#F6F6F7] p-4 space-y-2.5">
                   {cart.map((i) => (
                     <div key={i.productId} className="flex justify-between text-sm">
-                      <span style={{ color: '#aaa' }}>{i.name} <span className="font-semibold text-white">×{i.quantity}</span></span>
-                      <span className="font-semibold text-white">${(i.price * i.quantity).toFixed(2)}</span>
+                      <span className="text-[#6D7175]">{i.name} <span className="font-semibold text-[#1A1A1A]">×{i.quantity}</span></span>
+                      <span className="font-semibold text-[#1A1A1A]">${(i.price * i.quantity).toFixed(2)}</span>
                     </div>
                   ))}
-                  <div className="flex justify-between text-base font-bold pt-3 border-t border-white/10 mt-3">
-                    <span className="text-white">Total</span>
-                    <span className="text-white">${total.toFixed(2)}</span>
+                  <div className="flex justify-between text-base font-bold pt-3 border-t border-[#E1E3E5] mt-3">
+                    <span className="text-[#1A1A1A]">Total</span>
+                    <span className="text-[#1A1A1A]">${total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
 
               {/* Payment method */}
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#666' }}>Payment Method</p>
+                <p className="text-xs font-semibold text-[#6D7175] uppercase tracking-widest mb-3">Payment Method</p>
                 <div className="grid grid-cols-3 gap-2">
                   {PAYMENT_METHODS.map((m) => (
                     <button
                       key={m.value}
                       onClick={() => setPaymentMethod(m.value)}
-                      className="flex flex-col items-center gap-2 py-4 rounded-xl text-sm font-semibold transition-all"
-                      style={{
-                        background: paymentMethod === m.value ? '#fff' : '#2A2A2A',
-                        color: paymentMethod === m.value ? '#1C1C1C' : '#888',
-                        border: `2px solid ${paymentMethod === m.value ? '#fff' : 'transparent'}`,
-                      }}
+                      className={cn(
+                        'flex flex-col items-center gap-2 py-4 rounded-xl text-sm font-semibold border-2 transition-all',
+                        paymentMethod === m.value
+                          ? 'border-[#008060] bg-[#EAF5F0] text-[#008060]'
+                          : 'border-[#E1E3E5] bg-white text-[#6D7175] hover:bg-[#F6F6F7]',
+                      )}
                     >
                       <m.icon size={18} />
                       {m.label}
@@ -497,19 +488,18 @@ export default function CashierPage() {
               {/* Cash amount */}
               {paymentMethod === 'CASH' && (
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#666' }}>Amount Tendered</p>
+                  <p className="text-xs font-semibold text-[#6D7175] uppercase tracking-widest mb-3">Amount Tendered</p>
                   <input
                     type="number"
                     value={amountPaid}
                     onChange={(e) => setAmountPaid(e.target.value)}
                     placeholder={`$${total.toFixed(2)}`}
-                    className="w-full px-4 py-3 rounded-xl text-white font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-white/30 placeholder-gray-600"
-                    style={{ background: '#2A2A2A', border: '2px solid #333' }}
+                    className="w-full px-4 py-3 rounded-xl border border-[#C9CCCF] bg-white text-[#1A1A1A] font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-[#008060]/30 focus:border-[#008060] placeholder-[#C9CCCF]"
                   />
                   {Number(amountPaid) >= total && (
-                    <div className="mt-3 px-4 py-3 rounded-xl flex justify-between items-center" style={{ background: '#0a3d2e' }}>
-                      <span className="text-sm font-semibold" style={{ color: '#00c896' }}>Change</span>
-                      <span className="text-lg font-bold" style={{ color: '#00c896' }}>${change.toFixed(2)}</span>
+                    <div className="mt-3 px-4 py-3 rounded-xl bg-[#EAF5F0] flex justify-between items-center">
+                      <span className="text-sm font-semibold text-[#008060]">Change</span>
+                      <span className="text-lg font-bold text-[#008060]">${change.toFixed(2)}</span>
                     </div>
                   )}
                 </div>
@@ -517,24 +507,24 @@ export default function CashierPage() {
 
               {/* Customer info */}
               {selectedCustomer && (
-                <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: '#2A2A2A' }}>
-                  <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[#E1E3E5] bg-[#F6F6F7]">
+                  <div className="w-8 h-8 rounded-full bg-[#EAF5F0] flex items-center justify-center text-[#008060] text-xs font-bold flex-shrink-0">
                     {selectedCustomer.name.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-white">{selectedCustomer.name}</p>
-                    {selectedCustomer.phone && <p className="text-xs" style={{ color: '#888' }}>{selectedCustomer.phone}</p>}
+                    <p className="text-sm font-semibold text-[#1A1A1A]">{selectedCustomer.name}</p>
+                    {selectedCustomer.phone && <p className="text-xs text-[#6D7175]">{selectedCustomer.phone}</p>}
                   </div>
                 </div>
               )}
             </div>
 
             {/* Charge button */}
-            <div className="px-5 pb-5 pt-4 border-t border-white/10">
+            <div className="px-5 pb-5 pt-4 border-t border-[#E1E3E5]">
               <button
                 onClick={handleCheckout}
                 disabled={submitting || (paymentMethod === 'CASH' && Number(amountPaid) < total)}
-                className="w-full py-4 rounded-xl text-white font-bold text-base transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-90 active:scale-[0.99] flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-xl text-white font-bold text-base transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 active:scale-[0.99] flex items-center justify-center gap-2"
                 style={{ background: '#008060' }}
               >
                 {submitting ? (
